@@ -29,14 +29,8 @@ jobs:
     if: needs.check-update.outputs.changed == '1'
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-          cache: 'pip'
       - name: Install Dependencies
         run: |
-          echo "Installing Python Dependencies"
-          pip install -r requirements.txt
           sudo apt-get update
           echo "Installing msitools"
           sudo apt-get install msitools
@@ -74,6 +68,23 @@ jobs:
           echo "Extracting Mac packages"
           ./7z/7zz x -y calibre.dmg -ocalibre-mac 2>/dev/null || true
 
+      - name: Get Python version
+        id: pyver
+        run: |
+          PYV="$(find ./calibre-linux-x64/lib -name 'libpython*' | grep -oP '(?<=libpython)\d\.\d+')"
+          echo "::notice title=Calibre Python Version::$PYV"
+          echo "PYTHON_VERSION=$PYV" >> $GITHUB_OUTPUT
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ steps.pyver.outputs.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Python requirements
+        run: |
+          echo "Installing Python Dependencies"
+          pip install -r requirements.txt
+
       - name: Build
         env:
           CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
@@ -88,8 +99,8 @@ jobs:
           echo "7z version"
           ./7z/7zz i
           ls -lh calibre-win/PFiles/Calibre2/app/bin/python-lib.bypy.frozen calibre-win/PFiles/Calibre2/app/bin/calibre-launcher.dll calibre-linux-x64/lib/calibre-extensions/python-lib.bypy.frozen calibre-linux-x64/lib/libcalibre-launcher.so calibre-linux-arm64/lib/calibre-extensions/python-lib.bypy.frozen calibre-linux-arm64/lib/libcalibre-launcher.so calibre-mac/calibre.app/Contents/Frameworks/plugins/python-lib.bypy.frozen calibre-mac/calibre.app/Contents/Frameworks/calibre-launcher.dylib
-          echo "ls -lR"
-          ls -lR
+          # echo "ls -lR"
+          # ls -lR
 
       - name: Update Code
         env: 

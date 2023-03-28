@@ -24,7 +24,7 @@ def do_main(
     zip_path: str,
     zip_launcher_path: str,
     zip_bypy_path: str,
-    python_lib: str,
+    # python_lib: str,
 ):
 
     print(f"[+] downloading Calibre package ...")
@@ -32,11 +32,11 @@ def do_main(
     print("[+] extracting Calibre installer, it may takes long time ...")
     extract_func(package_name, extract_path)
 
-    print("[+] checking Calibre python version ...")
-    if not _os.path.exists(python_lib):
-        dir = _os.path.dirname(python_lib)
-        maybe_lib = glob(f"{dir}/*python*")
-        raise Exception(f"Calibre python version changed! usefull info: {maybe_lib}")
+    # print("[+] checking Calibre python version ...")
+    # if not _os.path.exists(python_lib):
+    #     dir = _os.path.dirname(python_lib)
+    #     maybe_lib = glob(f"{dir}/*python*")
+    #     raise Exception(f"Calibre python version changed! usefull info: {maybe_lib}")
 
     print("[+] patching backend.py ...")
     patch_backend.patch("backend-original.py", "backend.py", os)
@@ -101,7 +101,7 @@ def main(os: str | None, version: str):
             zip_path=f"patch-win-{version}.zip",
             zip_bypy_path="Calibre2/app/bin/python-lib.bypy.frozen",
             zip_launcher_path="Calibre2/app/bin/calibre-launcher.dll",
-            python_lib='calibre-win/PFiles/Calibre2/app/bin/python310.dll'
+            # python_lib='calibre-win/PFiles/Calibre2/app/bin/python310.dll'
         )
     if os is None or (os is not None and os == "linux-x64"):
         print("[+] processing Linux x64 package ...")
@@ -117,7 +117,7 @@ def main(os: str | None, version: str):
             zip_path=f"patch-linux-x64-{version}.zip",
             zip_bypy_path="lib/calibre-extensions/python-lib.bypy.frozen",
             zip_launcher_path="lib/libcalibre-launcher.so",
-            python_lib='calibre-linux-x64/lib/libpython3.10.so.1.0'
+            # python_lib='calibre-linux-x64/lib/libpython3.10.so.1.0'
         )
 
     if os is None or (os is not None and os == "linux-arm64"):
@@ -134,7 +134,7 @@ def main(os: str | None, version: str):
             zip_path=f"patch-linux-arm64-{version}.zip",
             zip_bypy_path="lib/calibre-extensions/python-lib.bypy.frozen",
             zip_launcher_path="lib/libcalibre-launcher.so",
-            python_lib='calibre-linux-arm64/lib/libpython3.10.so.1.0'
+            # python_lib='calibre-linux-arm64/lib/libpython3.10.so.1.0'
         )
     if os is None or (os is not None and os == "mac"):
         print("[+] processing macOS package ...")
@@ -150,7 +150,7 @@ def main(os: str | None, version: str):
             zip_path=f"patch-mac-{version}.zip",
             zip_bypy_path="calibre.app/Contents/Frameworks/plugins/python-lib.bypy.frozen",
             zip_launcher_path="calibre.app/Contents/Frameworks/calibre-launcher.dylib",
-            python_lib='calibre-mac/calibre.app/Contents/Frameworks/Python.framework/Versions/3.10/Python'
+            # python_lib='calibre-mac/calibre.app/Contents/Frameworks/Python.framework/Versions/3.10/Python'
         )
 
 

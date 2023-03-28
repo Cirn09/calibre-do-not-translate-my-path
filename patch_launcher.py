@@ -262,7 +262,7 @@ def patch(input: str, output: str | None, os: str, offset: int, size: int):
         output = input
     else:
         shutil.copy(input, output)
-    _os.chmod(output, stat.S_IWRITE)
+    _os.chmod(output, 0o755)
     if os == "win":
         exe = PatchPE(input)
     elif os == "linux":
