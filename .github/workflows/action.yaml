@@ -87,8 +87,20 @@ jobs:
           msiextract --version
           echo "7z version"
           ./7z/7zz i
+          ls -lh calibre-win/PFiles/Calibre2/app/bin/python-lib.bypy.frozen calibre-win/PFiles/Calibre2/app/bin/calibre-launcher.dll calibre-linux-x64/lib/calibre-extensions/python-lib.bypy.frozen calibre-linux-x64/lib/libcalibre-launcher.so calibre-linux-arm64/lib/calibre-extensions/python-lib.bypy.frozen calibre-linux-arm64/lib/libcalibre-launcher.so calibre-mac/calibre.app/Contents/Frameworks/plugins/python-lib.bypy.frozen calibre-mac/calibre.app/Contents/Frameworks/calibre-launcher.dylib
           echo "ls -lR"
           ls -lR
+
+      - name: Update Code
+        env: 
+          CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
+        run: |
+          echo $CALIBRE_VERSION > CALIBRE_VERSION
+          git config --local user.email github-actions@github.com
+          git config --local user.name github-actions
+          git add CALIBRE_VERSION
+          git commit -m "Action: Update to v$CALIBRE_VERSION"
+          git push
 
       - name: Create Release
         uses: softprops/action-gh-release@v0.1.15
@@ -101,19 +113,3 @@ jobs:
             patch-linux-x64-${{ needs.check-update.outputs.version }}.zip
             patch-linux-arm64-${{ needs.check-update.outputs.version }}.zip
             patch-mac-${{ needs.check-update.outputs.version }}.zip
-  update:
-    runs-on: ubuntu-latest
-    needs: [check-update, build]
-    if: needs.check-update.outputs.changed == '1'
-    steps:
-      - uses: actions/checkout@v3
-      - name: Update Code
-        env: 
-          CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
-        run: |
-          echo $CALIBRE_VERSION > CALIBRE_VERSION
-          git config --local user.email github-actions@github.com
-          git config --local user.name github-actions
-          git add CALIBRE_VERSION
-          git commit -m "Action: Update to v$CALIBRE_VERSION"
-          git push
