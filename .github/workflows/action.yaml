@@ -18,9 +18,9 @@ jobs:
           curl -k https://code.calibre-ebook.com/latest -o REMOTE_VERSION
           echo "version=$(cat REMOTE_VERSION)" >> $GITHUB_OUTPUT
           if diff --brief REMOTE_VERSION CALIBRE_VERSION > /dev/null; then
-            echo "::notice title='New Version Found!'::New version found: $(cat REMOTE_VERSION)"
             echo "changed=0" >> $GITHUB_OUTPUT
           else
+            echo "::notice title='New Version Found!'::New version found: $(cat REMOTE_VERSION)"
             echo "changed=1" >> $GITHUB_OUTPUT
           fi
   update:
@@ -34,7 +34,7 @@ jobs:
           CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
         run: |
           echo $CALIBRE_VERSION > CALIBRE_VERSION
-          git config --local user.email "Cirn09@outlook.com
+          git config --local user.email "Cirn09@outlook.com"
           git config --local user.name "Cirn09"
           git add CALIBRE_VERSION
           git commit -m "Action: Update to v$(cat REMOTE_VERSION)"
