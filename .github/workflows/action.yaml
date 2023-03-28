@@ -20,7 +20,7 @@ jobs:
           if diff --brief REMOTE_VERSION CALIBRE_VERSION > /dev/null; then
             echo "changed=0" >> $GITHUB_OUTPUT
           else
-            echo "::notice title='New Version Found!'::New version found: $(cat REMOTE_VERSION)"
+            echo "::notice title=New Version Found!::New version found: $(cat REMOTE_VERSION)"
             echo "changed=1" >> $GITHUB_OUTPUT
           fi
   update:
@@ -37,7 +37,7 @@ jobs:
           git config --local user.email github-actions@github.com
           git config --local user.name github-actions
           git add CALIBRE_VERSION
-          git commit -m "Action: Update to v$(cat REMOTE_VERSION)"
+          git commit -m "Action: Update to v$REMOTE_VERSION"
           git push
   build:
     runs-on: ubuntu-latest
@@ -52,8 +52,8 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
-          apt-get update
-          apt-get install msitools
+          sudo apt-get update
+          sudo apt-get install msitools
           curl https://www.7-zip.org/a/7z2201-linux-x64.tar.xz -o 7z.tar.xz
           mkdir 7z
           tar -xJf 7z.tar.xz -C 7z
