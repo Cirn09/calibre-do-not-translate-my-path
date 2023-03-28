@@ -50,6 +50,16 @@ jobs:
           CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
         run: |
           python main.py --version $CALIBRE_VERSION
+      
+      - name: on error
+        if: ${{ failure() }}
+        run: |
+          echo "msiextract version"
+          msiextract --version
+          echo "7z version"
+          ./7z/7zz i
+          echo "ls -R"
+          ls -R
 
       - name: Create Release
         uses: softprops/action-gh-release@v0.1.15
