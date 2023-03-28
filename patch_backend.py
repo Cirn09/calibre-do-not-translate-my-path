@@ -41,10 +41,6 @@ ASCII_FILENAME_SUM = 7
 #     return parser.parse_args()
 
 
-def warnning(msg):
-    print("\x1b[31m" + msg + "\x1b[0m")
-
-
 @click.command()
 @click.argument("input", required=True, type=click.Path(exists=True))
 @click.argument("output", required=False, type=click.Path(exists=False))
@@ -69,7 +65,7 @@ def patch(input: str, output: str | None, os: str):
 
     ascii_filaname_sum = old.count("ascii_filename")
     if ascii_filaname_sum != ASCII_FILENAME_SUM:
-        warnning(
+        raise Exception(
             f"backend.py ascii_filename count changed ({ascii_filaname_sum}). May cause error! Please check!"
         )
 

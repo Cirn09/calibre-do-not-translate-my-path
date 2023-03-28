@@ -23,25 +23,9 @@ jobs:
             echo "::notice title=New Version Found!::New version found: $(cat REMOTE_VERSION)"
             echo "changed=1" >> $GITHUB_OUTPUT
           fi
-  update:
-    runs-on: ubuntu-latest
-    needs: check-update
-    if: needs.check-update.outputs.changed == '1'
-    steps:
-      - uses: actions/checkout@v3
-      - name: Update Code
-        env: 
-          CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
-        run: |
-          echo $CALIBRE_VERSION > CALIBRE_VERSION
-          git config --local user.email github-actions@github.com
-          git config --local user.name github-actions
-          git add CALIBRE_VERSION
-          git commit -m "Action: Update to v$REMOTE_VERSION"
-          git push
   build:
     runs-on: ubuntu-latest
-    needs: [check-update, update]
+    needs: check-update
     if: needs.check-update.outputs.changed == '1'
     steps:
       - uses: actions/checkout@v3
@@ -51,9 +35,12 @@ jobs:
           cache: 'pip'
       - name: Install Dependencies
         run: |
+          echo "Installing Python Dependencies"
           pip install -r requirements.txt
           sudo apt-get update
+          echo "Installing msitools"
           sudo apt-get install msitools
+          echo "Installing 7z"
           curl https://www.7-zip.org/a/7z2201-linux-x64.tar.xz -o 7z.tar.xz
           mkdir 7z
           tar -xJf 7z.tar.xz -C 7z
@@ -75,3 +62,19 @@ jobs:
             patch-linux-x64-${{ needs.check-update.outputs.version }}.zip
             patch-linux-arm64-${{ needs.check-update.outputs.version }}.zip
             patch-mac-${{ needs.check-update.outputs.version }}.zip
+  update:
+    runs-on: ubuntu-latest
+    needs: [check-update, build]
+    if: needs.check-update.outputs.changed == '1'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Update Code
+        env: 
+          CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
+        run: |
+          echo $CALIBRE_VERSION > CALIBRE_VERSION
+          git config --local user.email github-actions@github.com
+          git config --local user.name github-actions
+          git add CALIBRE_VERSION
+          git commit -m "Action: Update to v$CALIBRE_VERSION"
+          git push
