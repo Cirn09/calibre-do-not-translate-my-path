@@ -60,17 +60,19 @@ jobs:
           curl "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-$CALIBRE_VERSION-arm64.txz" -o calibre-arm64.txz
           echo "Downloading Mac packages v$CALIBRE_VERSION"
           curl "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-$CALIBRE_VERSION.dmg" -o calibre.dmg
-          
+
       - name: Extract packages
         run: |
           echo "Extracting Windows installer"
           msiextract calibre.msi -C calibre-win
           echo "Extracting Linux x64 packages"
+          mkdir calibre-linux-x64
           tar Jxf calibre-x64.txz -C calibre-linux-x64
           echo "Extracting Linux arm64 packages"
+          mkdir calibre-linux-arm64
           tar Jxf calibre-arm64.txz -C calibre-linux-arm64
           echo "Extracting Mac packages"
-          ./7z/7zz x -y calibre.dmg -ocalibre-mac
+          ./7z/7zz x -y calibre.dmg -ocalibre-mac 2>/dev/null || true
 
       - name: Build
         env:
