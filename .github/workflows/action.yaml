@@ -18,9 +18,10 @@ jobs:
           curl -k https://code.calibre-ebook.com/latest -o REMOTE_VERSION
           echo "version=$(cat REMOTE_VERSION)" >> $GITHUB_OUTPUT
           if diff --brief REMOTE_VERSION CALIBRE_VERSION > /dev/null; then
+            echo "::notice title=Calibre Version not Changed::$(cat REMOTE_VERSION)"
             echo "changed=0" >> $GITHUB_OUTPUT
           else
-            echo "::notice title=New Version Found!::New version found: $(cat REMOTE_VERSION)"
+            echo "::notice title=New Version Found!::$(cat REMOTE_VERSION)"
             echo "changed=1" >> $GITHUB_OUTPUT
           fi
   build:
@@ -46,6 +47,10 @@ jobs:
         run: |
           echo "Downloading backend.py v$CALIBRE_VERSION"
           curl "https://raw.githubusercontent.com/kovidgoyal/calibre/v$CALIBRE_VERSION/src/calibre/db/backend.py" -o backend-original.py
+
+          ascii_filename_times=$(grep -o "ascii_filename" ./backend-original.py | wc -l)
+          echo "::notice title=\"ascii_filename\" appeared $ascii_filename_times times in backend.py::$ascii_filename_times"
+
           echo "Downloading Windows installer v$CALIBRE_VERSION"
           curl "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-64bit-$CALIBRE_VERSION.msi" -o calibre.msi
           echo "Downloading Linux x64 packages v$CALIBRE_VERSION"
