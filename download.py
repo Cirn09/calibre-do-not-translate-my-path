@@ -18,7 +18,7 @@ def download(url: str, output: str, overwrite: bool = False):
 
 def download_all(version: str):
     download(URL_BACKEND.format(version=version), "backend-original.py")
-    download(URL_WIN.format(version=version), "calibre-win.msi")
-    download(URL_LINUX_x64.format(version=version), "calibre-linux-x64.txz")
-    download(URL_LINUX_ARM64.format(version=version), "calibre-linux-arm64.txz")
+    download(URL_WIN.format(version=version), "calibre.msi")
+    download(URL_LINUX_x64.format(version=version), "calibre-x64.txz")
+    download(URL_LINUX_ARM64.format(version=version), "calibre-arm64.txz")
     download(URL_MAC.format(version=version), "calibre.dmg")

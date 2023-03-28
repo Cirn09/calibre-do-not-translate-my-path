@@ -45,6 +45,33 @@ jobs:
           mkdir 7z
           tar -xJf 7z.tar.xz -C 7z
           echo "PATH=$(pwd)/7z:$PATH" >> $GITHUB_ENV
+
+      - name: Download packages
+        env:
+          CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
+        run: |
+          echo "Downloading backend.py v$CALIBRE_VERSION"
+          curl "https://raw.githubusercontent.com/kovidgoyal/calibre/v$CALIBRE_VERSION/src/calibre/db/backend.py" -o backend-original.py
+          echo "Downloading Windows installer v$CALIBRE_VERSION"
+          curl "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-64bit-$CALIBRE_VERSION.msi" -o calibre.msi
+          echo "Downloading Linux x64 packages v$CALIBRE_VERSION"
+          curl "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-$CALIBRE_VERSION-x86_64.txz" -o calibre-x64.txz
+          echo "Downloading Linux arm64 packages v$CALIBRE_VERSION"
+          curl "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-$CALIBRE_VERSION-arm64.txz" -o calibre-arm64.txz
+          echo "Downloading Mac packages v$CALIBRE_VERSION"
+          curl "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-$CALIBRE_VERSION.dmg" -o calibre.dmg
+          
+      - name: Extract packages
+        run: |
+          echo "Extracting Windows installer"
+          msiextract calibre.msi -C calibre-win
+          echo "Extracting Linux x64 packages"
+          tar Jxf calibre-x64.txz -C calibre-linux-x64
+          echo "Extracting Linux arm64 packages"
+          tar Jxf calibre-arm64.txz -C calibre-linux-arm64
+          echo "Extracting Mac packages"
+          ./7z/7zz x -y calibre.dmg -ocalibre-mac
+
       - name: Build
         env:
           CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
@@ -58,8 +85,8 @@ jobs:
           msiextract --version
           echo "7z version"
           ./7z/7zz i
-          echo "ls -R"
-          ls -R
+          echo "ls -lR"
+          ls -lR
 
       - name: Create Release
         uses: softprops/action-gh-release@v0.1.15
