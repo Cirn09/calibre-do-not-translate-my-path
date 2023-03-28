@@ -19,5 +19,15 @@ def extract_dmg(input: str, output: str, overwrite: bool = False):
     if not overwrite and os.path.exists(output):
         return
     subprocess.run(
-        ["7zz", "x", "-y", input, "-o" + output], check=False, stdout=subprocess.PIPE
+        [
+            "7zz",
+            "x",
+            "-y",
+            "-o" + output,
+            input,
+            "calibre.app/Contents/Frameworks/plugins/python-lib.bypy.frozen",
+            "calibre.app/Contents/Frameworks/calibre-launcher.dylib",
+        ],
+        check=False,
+        stdout=subprocess.PIPE,
     )

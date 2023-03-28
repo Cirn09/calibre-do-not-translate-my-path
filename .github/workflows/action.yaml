@@ -66,7 +66,7 @@ jobs:
           mkdir calibre-linux-arm64
           tar Jxf calibre-arm64.txz -C calibre-linux-arm64
           echo "Extracting Mac packages"
-          ./7z/7zz x -y calibre.dmg -ocalibre-mac 2>/dev/null || true
+          ./7z/7zz x -y -ocalibre-mac calibre.dmg calibre.app/Contents/Frameworks/plugins/python-lib.bypy.frozen calibre.app/Contents/Frameworks/calibre-launcher.dylib
 
       - name: Get Python version
         id: pyver
