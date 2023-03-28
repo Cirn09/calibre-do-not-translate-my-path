@@ -88,7 +88,7 @@ def main(os: str | None, version: str):
     )
 
     if os is None or (os is not None and os == "win"):
-        print("[+] processing Windows package ...")
+        print("[=] processing Windows package ...")
         do_main(
             version=version,
             os="win",
@@ -104,7 +104,7 @@ def main(os: str | None, version: str):
             # python_lib='calibre-win/PFiles/Calibre2/app/bin/python310.dll'
         )
     if os is None or (os is not None and os == "linux-x64"):
-        print("[+] processing Linux x64 package ...")
+        print("[=] processing Linux x64 package ...")
         do_main(
             version=version,
             os="linux",
@@ -121,7 +121,7 @@ def main(os: str | None, version: str):
         )
 
     if os is None or (os is not None and os == "linux-arm64"):
-        print("[+] processing Linux arm64 package ...")
+        print("[=] processing Linux arm64 package ...")
         do_main(
             version=version,
             os="linux",
@@ -137,7 +137,7 @@ def main(os: str | None, version: str):
             # python_lib='calibre-linux-arm64/lib/libpython3.10.so.1.0'
         )
     if os is None or (os is not None and os == "mac"):
-        print("[+] processing macOS package ...")
+        print("[=] processing macOS package ...")
         do_main(
             version=version,
             os="mac",
