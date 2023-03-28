@@ -22,9 +22,9 @@ If you have already created a library and want to change the existing library to
 0. 备份你的书库（可选，建议）
 1. 打开书库，按下 Ctrl+A 选中所有书籍
 2. 右键 - 编辑元数据 - 批量编辑元数据 - “查找替换”页
-3. 查找模式：正则表达式，查找的字段：title，搜索：`$`，替换为：`__DELME__`
+3. 查找模式：正则表达式，查找的字段：`title`，搜索：`$`，替换为：`__DELME__`
 4. 点击“应用”，等待 Calibre 完成（点击前注意看一下下面的替换预阅，新书名应当是原书名+`__DELME__`）
-5. 查找模式：字符匹配，查找的字段：title，搜索：`__DELME__`，“替换为”保持为空（
+5. 查找模式：字符匹配，查找的字段：`title`，搜索：`__DELME__`，“替换为”保持为空（
 5. 点击“确定”，等待 Calibre 完成（点击前注意看一下下面的替换预阅，此时的新书名应当是原本的书名）
 
 <br/>
@@ -32,16 +32,15 @@ If you have already created a library and want to change the existing library to
 0. Backup your library (optional, but recommended).
 1. Open the library and press Ctrl+A to select all books.
 2. Right-click and choose "Edit metadata," then select "Bulk metadata edit," and go to the "Search and Replace" page.
-3. Use regular expressions as the search mode and search for "title" by entering $ in the search field. Replace it with __DELME__.
+3. Use regular expressions as the search mode and search for "title" by entering `$` in the search field. Replace it with `__DELME__`.
 4. Click "Apply" and wait for Calibre to finish.
-5. Use character matching as the search mode and search for "title" by entering __DELME__ in the search field. Leave the "Replace with" field empty.
+5. Use character matching as the search mode and search for "title" by entering `__DELME__` in the search field. Leave the "Replace with" field empty.
 6. Click "OK" and wait for Calibre to finish.
 
 PS: English version is translated by ChatGPT. If you find any mistakes, feel free to open an issue or PR.
 
 
 ## 原理 | Principle
-## 
 
 后序写篇博客，在写了在写了.jpg
 
