@@ -118,7 +118,7 @@ jobs:
         with:
           body: Calibre v${{ needs.check-update.outputs.version }}
           draft: false
-          tage_name: v${{ needs.check-update.outputs.version }}
+          tag_name: v${{ needs.check-update.outputs.version }}
           files: |
             patch-win-${{ needs.check-update.outputs.version }}.zip
             patch-linux-x64-${{ needs.check-update.outputs.version }}.zip
