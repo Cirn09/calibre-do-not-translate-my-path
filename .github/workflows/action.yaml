@@ -1,0 +1,77 @@
+on:
+  schedule:
+    # 每天 00:00 执行
+    - cron:  '0 0 * * *'
+  # 允许手动执行
+  workflow_dispatch:
+jobs:
+  check-update:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.check-version.outputs.changed }}
+      version: ${{ steps.check-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check Version
+        id: check-version
+        run: |
+          curl -k https://code.calibre-ebook.com/latest -o REMOTE_VERSION
+          echo "version=$(cat REMOTE_VERSION)" >> $GITHUB_OUTPUT
+          if diff --brief REMOTE_VERSION CALIBRE_VERSION > /dev/null; then
+            echo "::notice title='New Version Found!'::New version found: $(cat REMOTE_VERSION)"
+            echo "changed=0" >> $GITHUB_OUTPUT
+          else
+            echo "changed=1" >> $GITHUB_OUTPUT
+          fi
+  update:
+    runs-on: ubuntu-latest
+    needs: check-update
+    if: needs.check-update.outputs.changed == '1'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Update Code
+        env: 
+          CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
+        run: |
+          echo $CALIBRE_VERSION > CALIBRE_VERSION
+          git config --local user.email "Cirn09@outlook.com
+          git config --local user.name "Cirn09"
+          git add CALIBRE_VERSION
+          git commit -m "Action: Update to v$(cat REMOTE_VERSION)"
+          git push
+  build:
+    runs-on: ubuntu-latest
+    needs: [check-update, update]
+    if: needs.check-update.outputs.changed == '1'
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          apt-get update
+          apt-get install msitools
+          curl https://www.7-zip.org/a/7z2201-linux-x64.tar.xz -o 7z.tar.xz
+          mkdir 7z
+          tar -xJf 7z.tar.xz -C 7z
+          echo "PATH=$(pwd)/7z:$PATH" >> $GITHUB_ENV
+      - name: Build
+        env:
+          CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
+        run: |
+          python main.py --version $CALIBRE_VERSION
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v0.1.15
+        with:
+          body: Calibre v${{ needs.check-update.outputs.version }}
+          draft: false
+          tage_name: v${{ needs.check-update.outputs.version }}
+          files: |
+            patch-win-${{ needs.check-update.outputs.version }}.zip
+            patch-linux-x64-${{ needs.check-update.outputs.version }}.zip
+            patch-linux-arm64-${{ needs.check-update.outputs.version }}.zip
+            patch-mac-${{ needs.check-update.outputs.version }}.zip

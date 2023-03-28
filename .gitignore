@@ -1,0 +1,17 @@
+.vscode
+*.pyc
+*.zip
+backend-original.py
+backend.py
+7z
+calibre-linux-arm64
+calibre-linux-x64
+calibre-mac
+calibre-win
+package
+*.txz
+*.tar.xz
+*.dmg
+*.msi
+__pycache__
+note.md
