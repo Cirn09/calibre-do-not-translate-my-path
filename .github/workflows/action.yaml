@@ -106,7 +106,7 @@ jobs:
         env: 
           CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
         run: |
-          echo $CALIBRE_VERSION > CALIBRE_VERSION
+          echo -n $CALIBRE_VERSION > CALIBRE_VERSION
           git config --local user.email github-actions@github.com
           git config --local user.name github-actions
           git add CALIBRE_VERSION
