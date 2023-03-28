@@ -6,12 +6,12 @@ As the title suggests, this is a guide on how to prevent Calibre from translatin
 
 ## 使用方法 | Usage
 
-1. 根据平台下载 Release，覆盖原本 Calibre 文件。
+1. 根据平台下载 [Release](https://github.com/Cirn09/calibre-do-not-translate-my-path/releases/latest)，覆盖原本 Calibre 文件。
 2. 没了
 
 <br/>
 
-1. Download the Release for your platform and replace the original Calibre files.
+1. Download the [Release](https://github.com/Cirn09/calibre-do-not-translate-my-path/releases/latest) for your platform and replace the original Calibre files.
 2. Enjoy.
 
 

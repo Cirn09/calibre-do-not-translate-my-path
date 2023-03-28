@@ -186,12 +186,12 @@ class PatchBase(object):
 
         foa_index = self.display_offset + self.seg_index.offset + offset_index
         va_index = self.binary.imagebase + self.seg_index.virtual_address + offset_index
-        print(f"PYC item table foa: {foa_index:#x}, va: {va_index:#x}")
+        print(f"[+] PYC item table foa: {foa_index:#x}, va: {va_index:#x}")
         foa_pstr = self.display_offset + self.seg_pstr.offset + offset_pstr_start
         va_pstr = (
             self.binary.imagebase + self.seg_pstr.virtual_address + offset_pstr_start
         )
-        print(f"PYC string table foa: {foa_pstr:#x}, va: {va_pstr:#x}")
+        print(f"[+] PYC string table foa: {foa_pstr:#x}, va: {va_pstr:#x}")
 
         offset_str = self.seg_str.search(PYC_BACKEND)
         va = self.binary.imagebase + self.seg_str.virtual_address + offset_str
@@ -209,7 +209,7 @@ class PatchBase(object):
             + offset_index
             + self.config.sizeof_long * (2 * index + 1)
         )
-        print(f"PYC backend offset: {offset:#x}, size: {size:#x}")
+        print(f"[+] PYC backend offset: {offset:#x}, size: {size:#x}")
         return offset, size
 
 
