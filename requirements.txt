@@ -1,2 +1,2 @@
-lief
+lief==0.12.3
 click

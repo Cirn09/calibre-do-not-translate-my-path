@@ -42,7 +42,7 @@ WORD_BYTES = 8  # 目前 Calibre 只编译64位，字长统统 8 字节
 
 # PYC_ANCHOR = b"Crypto/Cipher/AES.pyc"
 # PYC_BACKEND = b"calibre/db/backend.pyc"
-# TODO: 等 https://github.com/lief-project/LIEF/issues/880 完成
+# TODO: 等 lief 0.13 release
 PYC_ANCHOR = "Crypto/Cipher/AES.pyc"
 PYC_ANCHOR = "Crypto/Cipher/_EKSBlowfish.pyc"
 PYC_BACKEND = "calibre/db/backend.pyc"
@@ -153,7 +153,7 @@ class PatchBase(object):
 
     def find_pstr(self) -> int:
         anchor_offset = self.seg_str.search(PYC_ANCHOR)
-        if anchor_offset == 0xFFFFFFFFFFFFFFFF:  # TODO
+        if anchor_offset == 0xFFFFFFFFFFFFFFFF:  # # TODO: 等 lief 0.13 release
             raise PstrNotFoundError(f'PYC anchor("{PYC_ANCHOR}") not found')
         # anchor_addr = self.seg_str.offset + anchor_offset + self.binary.imagebase
         anchor_addr = (
