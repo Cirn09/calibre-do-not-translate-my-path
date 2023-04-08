@@ -112,7 +112,7 @@ class PatchBase(object):
         # [ offset, size ]
         raw = self.seg_index.content
         sizeof_long = self.config.sizeof_long
-        for i in range(0, len(raw) - 0x10 * 4, 0x10):  # 对齐
+        for i in range(0, len(raw) - 0x10 * 4, sizeof_long):  # 对齐
             get_offset_range = lambda j: (
                 i + sizeof_long * (j * 2),
                 i + sizeof_long * (j * 2 + 1),
