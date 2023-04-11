@@ -22,7 +22,6 @@ def do_main(
     bypy_path: str,
     launcher_path: str,
     zip_path: str,
-    zip_launcher_path: str,
     zip_bypy_path: str,
     # python_lib: str,
 ):
@@ -32,39 +31,32 @@ def do_main(
     print("[+] extracting Calibre installer, it may takes long time ...")
     extract_func(package_name, extract_path)
 
-    # print("[+] checking Calibre python version ...")
-    # if not _os.path.exists(python_lib):
-    #     dir = _os.path.dirname(python_lib)
-    #     maybe_lib = glob(f"{dir}/*python*")
-    #     raise Exception(f"Calibre python version changed! usefull info: {maybe_lib}")
-
     print("[+] patching backend.py ...")
-    patch_backend.patch("backend-original.py", "backend.py", os)
+    patch_backend.patch("backend-original.py", "backend-patched.py", os)
+    print(f"[+] compressing backend.py")
+    patch_backend.compress("backend-patched.py", "backend.py")
     print("[+] compiling backend.py ...")
     patch_backend.compile("backend.py", "backend.pyc")
     new_pyc_size = _os.stat("backend.pyc").st_size - 0x10
     print(f"[+] new pyc size: {new_pyc_size:#x}")
 
+    print("[+] processing calibre-launcher ...")
+    offset, size = patch_launcher.find(launcher_path, os=os)
+    print(f"[+] pyc size {size:#x} -> {new_pyc_size:#x} (shrink: {size-new_pyc_size:#x})")
+    assert new_pyc_size <= size, f"new pyc size {new_pyc_size:#x} > {size:#x}!!!"
+
     print("[+] patching bypy ...")
-    offset = patch_bypy.patch(
+    patch_bypy.patch(
         bypy_path,
         "backend.pyc",
+        offset,
         output=None,
     )
 
-    print("[+] patching calibre-launcher ...")
-    patch_launcher.patch(
-        launcher_path,
-        output=None,
-        os=os,
-        offset=offset,
-        size=new_pyc_size,
-    )
     print(f'[+] creating archive "patched-{os}-{version}.zip" ...')
 
     with zipfile.ZipFile(zip_path, "w") as z:
         z.write(bypy_path, zip_bypy_path)
-        z.write(launcher_path, zip_launcher_path)
 
 
 @click.command()
@@ -100,8 +92,6 @@ def main(os: str | None, version: str):
             launcher_path="calibre-win/PFiles/Calibre2/app/bin/calibre-launcher.dll",
             zip_path=f"patch-win-{version}.zip",
             zip_bypy_path="Calibre2/app/bin/python-lib.bypy.frozen",
-            zip_launcher_path="Calibre2/app/bin/calibre-launcher.dll",
-            # python_lib='calibre-win/PFiles/Calibre2/app/bin/python310.dll'
         )
     if os is None or (os is not None and os == "linux-x64"):
         print("[=] processing Linux x64 package ...")
@@ -116,8 +106,6 @@ def main(os: str | None, version: str):
             launcher_path="calibre-linux-x64/lib/libcalibre-launcher.so",
             zip_path=f"patch-linux-x64-{version}.zip",
             zip_bypy_path="lib/calibre-extensions/python-lib.bypy.frozen",
-            zip_launcher_path="lib/libcalibre-launcher.so",
-            # python_lib='calibre-linux-x64/lib/libpython3.10.so.1.0'
         )
 
     if os is None or (os is not None and os == "linux-arm64"):
@@ -133,8 +121,6 @@ def main(os: str | None, version: str):
             launcher_path="calibre-linux-arm64/lib/libcalibre-launcher.so",
             zip_path=f"patch-linux-arm64-{version}.zip",
             zip_bypy_path="lib/calibre-extensions/python-lib.bypy.frozen",
-            zip_launcher_path="lib/libcalibre-launcher.so",
-            # python_lib='calibre-linux-arm64/lib/libpython3.10.so.1.0'
         )
     if os is None or (os is not None and os == "mac"):
         print("[=] processing macOS package ...")
@@ -149,11 +135,8 @@ def main(os: str | None, version: str):
             launcher_path="calibre-mac/calibre.app/Contents/Frameworks/calibre-launcher.dylib",
             zip_path=f"patch-mac-{version}.zip",
             zip_bypy_path="calibre.app/Contents/Frameworks/plugins/python-lib.bypy.frozen",
-            zip_launcher_path="calibre.app/Contents/Frameworks/calibre-launcher.dylib",
-            # python_lib='calibre-mac/calibre.app/Contents/Frameworks/Python.framework/Versions/3.10/Python'
         )
 
 
 if __name__ == "__main__":
-    # main(os=None, version="6.14.1")
     cli_main()

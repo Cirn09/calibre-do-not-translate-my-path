@@ -1,10 +1,12 @@
-# import argparse
-import click
+import ast
 import sys
 import subprocess
 import glob
 import os
 import shutil
+
+import click
+import sqlparse
 
 ILLEGAL_WINDOWS = '\\/:*?"<>|'
 ILLEGAL_UNIX = "/"
@@ -81,6 +83,53 @@ def patch(input: str, output: str | None, os: str):
         f.write(new)
 
 
+def compress_sql(sql: str):
+    return sqlparse.format(
+        sql, strip_comments=True, strip_whitespace=True
+    )  # strip_whitespace 在文档里没写，是Copilot自动补的。检查了源码，还真有这个选项
+
+
+def compress(input: str, output: str | None):
+    if output is None:
+        output = input
+
+    with open(input, "r") as f:
+        code = f.read()
+
+    _ast = ast.parse(code)
+
+    for node in ast.walk(_ast):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr in ("execute", "executemany")
+            and len(node.args) > 0
+            and isinstance(node.args[0], ast.Str)
+        ):  # 压缩所有 execute*的参数
+            sqlcode = node.args[0].value
+            sql = compress_sql(sqlcode)
+            # node.args[0] = ast.Str(sql)
+            node.args[0].value = sql
+        elif (
+            isinstance(node, ast.Assign)
+            and isinstance(node.targets[0], ast.Name)
+            and node.targets[0].id == "lines"
+        ):
+            # 然后是 DB.create_custom_column.lines
+            # class DB:
+            #     def create_custom_column():
+            #         if normalized:
+            #             lines = [...]
+            #         else:
+            #             line = [...]
+            for _node in ast.walk(node):
+                if isinstance(_node, ast.Str):
+                    _node.value = compress_sql(_node.value)
+
+    with open(output, "w") as f:
+        f.write(ast.unparse(_ast))
+
+
 def compile(input: str, output: str):
     subprocess.check_output([sys.executable, "-OO", "-m", "py_compile", input])
     name, _ = os.path.splitext(input)
@@ -90,4 +139,10 @@ def compile(input: str, output: str):
 
 
 if __name__ == "__main__":
-    cli_patch()
+    # cli_patch()
+    patch("backend-original.py", "backend-patched.py", "win")
+    compress("backend-patched.py", "backend-compressed.py")
+    compile("backend-compressed.py", "backend-compressed.pyc")
+    compile("backend-original.py", "backend-original.pyc")
+    print(os.stat("backend-original.pyc").st_size)
+    print(os.stat("backend-compressed.pyc").st_size)

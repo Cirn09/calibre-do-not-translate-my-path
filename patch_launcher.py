@@ -49,29 +49,6 @@ PYC_BACKEND = "calibre/db/backend.pyc"
 RE_PYC = re.compile(rb"""[a-zA-Z0-9~!@#$%^&*()_+`\-={}\[\]\|\\:;"'<>,.?/]+\.pyc\0""")
 
 
-# def p32(x: int) -> bytes:
-#     return x.to_bytes(4, "little")
-
-
-# def p64(x: int) -> bytes:
-#     return x.to_bytes(8, "little")
-
-
-# def ux(x: int, size: int) -> bytes:
-#     return x.to_bytes(size, "little")
-
-
-# def u32(x: bytes):
-#     return int.from_bytes(x[:4], "little")
-
-
-# def u64(x: bytes):
-#     return int.from_bytes(x[:8], "little")
-
-
-# def find_pstr()
-
-
 class PatchBase(object):
     config: Config
     binary: Binary
@@ -197,18 +174,43 @@ class PatchBase(object):
         va = self.binary.imagebase + self.seg_str.virtual_address + offset_str
         offset_pstr = self.seg_pstr.search(va, size=WORD_BYTES)
         index = (offset_pstr - offset_pstr_start) // WORD_BYTES
-        offset = (
+
+        foa_offset = (
             self.display_offset
             + self.seg_index.offset
             + offset_index
             + self.config.sizeof_long * 2 * index
         )
-        size = (
+        foa_size = (
             self.display_offset
             + self.seg_index.offset
             + offset_index
             + self.config.sizeof_long * (2 * index + 1)
         )
+
+        print(
+            f"[+] PYC backend index: {index:#x}, offset: {foa_offset:#x}, size: {foa_size:#x}"
+        )
+
+        offset_seg_offset = (
+            offset_index + self.config.sizeof_long * 2 * index
+        )  # backend 的 offset 在 段内偏移
+        offset_seg_size = offset_index + self.config.sizeof_long * (
+            2 * index + 1
+        )  # backend 的 size 在 段内偏移
+        offset = int.from_bytes(
+            self.seg_index.content[
+                offset_seg_offset : offset_seg_offset + self.config.sizeof_long
+            ],
+            "little",
+        )
+        size = int.from_bytes(
+            self.seg_index.content[
+                offset_seg_size : offset_seg_size + self.config.sizeof_long
+            ],
+            "little",
+        )
+
         print(f"[+] PYC backend offset: {offset:#x}, size: {size:#x}")
         return offset, size
 
@@ -247,54 +249,24 @@ class PatchMachO(PatchBase):
 
 @click.command()
 @click.argument("input", type=click.Path(exists=True), required=True)
-@click.argument("output", type=click.Path(exists=False), required=False)
 @click.option(
     "os", "-o", "--os", type=click.Choice(["win", "linux", "mac"]), default="win"
 )
-@click.option("offset", "-f", "--offset", type=click.INT, required=True)
-@click.option("size", "-s", "--size", type=click.INT, required=True)
-def cli_patch(input: str, output: str, os: str, offset: int, size: int):
-    patch(input, output, os, offset, size)
+def cli_find(input: str, os: str):
+    find(input, os)
 
 
-def patch(input: str, output: str | None, os: str, offset: int, size: int):
-    if not output:
-        output = input
-    else:
-        shutil.copy(input, output)
-    _os.chmod(output, 0o755)
+def find(input: str, os: str) -> tuple[int, int]:
     if os == "win":
         exe = PatchPE(input)
     elif os == "linux":
         exe = PatchELF(input)
     elif os == "mac":
         exe = PatchMachO(input)
-    offset_offset, offset_size = exe.find_backend()
-    sizeof_long = exe.config.sizeof_long
+    offset, size = exe.find_backend()
 
-    with open(output, "rb+") as f:
-        f.seek(offset_offset)
-        f.write(offset.to_bytes(sizeof_long, "little"))
-        f.seek(offset_size)
-        f.write(size.to_bytes(sizeof_long, "little"))
+    return offset, size
 
 
 if __name__ == "__main__":
-    # ppe = PatchPE("./package/calibre-launcher-bk.dll")
-    # o, s = ppe.find_backend()
-    # print(hex(o), hex(s))
-
-    # pelf = PatchELF("package\\calibre-6.14.1-x86_64\\lib\\libcalibre-launcher.so")
-    # o, s = pelf.find_backend()
-    # print(hex(o), hex(s))
-
-    # pelf = PatchELF("package\\calibre-6.14.1-arm64\\lib\\libcalibre-launcher.so")
-    # o, s = pelf.find_backend()
-    # print(hex(o), hex(s))
-
-    # pmo = PatchMachO(
-    #     "package\\calibre-6.14.1\\calibre.app\\Contents\\Frameworks\\calibre-launcher.dylib"
-    # )
-    # o, s = pmo.find_backend()
-    # print(hex(o), hex(s))
-    cli_patch()
+    cli_find()

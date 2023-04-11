@@ -1,7 +1,9 @@
 .vscode
 *.pyc
 *.zip
+backend-compressed.py
 backend-original.py
+backend-patched.py
 backend.py
 7z
 calibre-linux-arm64
@@ -16,3 +18,5 @@ package
 __pycache__
 note.md
 REMOTE_VERSION
+tmp
+*.epub
