@@ -1,7 +1,7 @@
 on:
   schedule:
-    # 每天 00:00 执行
-    - cron:  '0 0 * * *'
+    # 每天 05:00 执行（北京时间 13：00）
+    - cron:  '0 5 * * *'
   # 允许手动执行
   workflow_dispatch:
 jobs:
