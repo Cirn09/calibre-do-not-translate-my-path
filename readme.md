@@ -2,9 +2,15 @@
 
 如题所示，让你的 Calibre 不要把中文路径翻译成拼音。
 
-As the title suggests, this is a guide on how to prevent Calibre from translating Chinese file paths into Pinyin.
+As the title suggests, this is a guide on how to prevent Calibre from translating Chinese file paths into Pinyin or other Latin transliteration.
+
+Github Action 每日北京时间 13：00 自动更新。
+
+Auto check update and release at 05:00 UTC+0 every day using Github Action.
 
 ## 使用方法 | Usage
+
+### Windows & Linux
 
 1. 根据平台和 Calibre 版本下载 [Release](https://github.com/Cirn09/calibre-do-not-translate-my-path/releases/latest)，覆盖原本 Calibre 文件。
 2. 没了
@@ -14,16 +20,17 @@ As the title suggests, this is a guide on how to prevent Calibre from translatin
 1. Download the [Release](https://github.com/Cirn09/calibre-do-not-translate-my-path/releases/latest) for your platform and replace the original Calibre files.
 2. Enjoy.
 
-### macOS平台使用方法 | Usage for macOS
+### macOS
 
-1. 解压下载的包，逐层点击进入底层路径，找到`python-lib.bypy.frozen`文件。
-2. 打开`Finder`，进入“应用程序”(/Applications)，右键点击“Calibre——显示包内容”，进入`Contents/Frameworks/plugins`(对应的完整路径是`/Applications/calibre.app/Contents/Frameworks/plugins`)。将第1步下载包里的`python-lib.bypy.frozen`，拷贝覆盖过来、关闭`Finder`窗口，正常打开`Calibre`即可。
+1. 解压下载的包，逐层点击进入底层路径，找到 `python-lib.bypy.frozen` 文件。
+2. 打开 `Finder`，进入“应用程序” (/Applications)，右键点击“Calibre——显示包内容”，进入 `Contents/Frameworks/plugins` (对应的完整路径是 `/Applications/calibre.app/Contents/Frameworks/plugins` )。将第 1 步下载包里的 `python-lib.bypy.frozen`，拷贝覆盖过来、关闭 `Finder` 窗口，正常打开 `Calibre` 即可。
 
- <br/>
+<br/>
  
- 1. Unzip downloaded file and get `python-lib.bypy.frozen` in the subdirectory.
- 2. Open `Finder`, right-click `Calibre` in `/Applications`, choose  `Show package content`. Copy downloaded `python-lib.bypy.frozen` to `Contents/Frameworks/plugins`. Close `Finder` and now enjoy your new `Calibre`.
+1. Unzip downloaded file and get `python-lib.bypy.frozen` in the subdirectory.
+2. Open `Finder`, right-click `Calibre` in `/Applications`, choose  `Show package content`. Copy downloaded `python-lib.bypy.frozen` to `Contents/Frameworks/plugins`. Close `Finder` and now enjoy your new `Calibre`.
 
+### Additional
 
 如果你已经创建了书库，希望将已有的书库改成非英文路径：
 
@@ -49,6 +56,9 @@ If you have already created a library and want to change the existing library to
 
 PS: English version is translated by ChatGPT. If you find any mistakes, feel free to open an issue or PR.
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Cirn09/calibre-do-not-translate-my-path&type=Date)](https://star-history.com/#Cirn09/calibre-do-not-translate-my-path&Date)
 
 ## 原理 | Principle
 
