@@ -14,6 +14,16 @@ As the title suggests, this is a guide on how to prevent Calibre from translatin
 1. Download the [Release](https://github.com/Cirn09/calibre-do-not-translate-my-path/releases/latest) for your platform and replace the original Calibre files.
 2. Enjoy.
 
+### macOS平台使用方法 | Usage for macOS
+
+1. 解压下载的包，逐层点击进入底层路径，找到`python-lib.bypy.frozen`文件。
+2. 打开`Finder`，进入“应用程序”(/Applications)，右键点击“Calibre——显示包内容”，进入`Contents/Frameworks/plugins`(对应的完整路径是`/Applications/calibre.app/Contents/Frameworks/plugins`)。将第1步下载包里的`python-lib.bypy.frozen`，拷贝覆盖过来、关闭`Finder`窗口，正常打开`Calibre`即可。
+
+ <br/>
+ 
+ 1. Unzip downloaded file and get `python-lib.bypy.frozen` in the subdirectory.
+ 2. Open `Finder`, right-click `Calibre` in `/Applications`, choose  `Show package content`. Copy downloaded `python-lib.bypy.frozen` to `Contents/Frameworks/plugins`. Close `Finder` and now enjoy your new `Calibre`.
+
 
 如果你已经创建了书库，希望将已有的书库改成非英文路径：
 
