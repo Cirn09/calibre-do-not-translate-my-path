@@ -123,28 +123,25 @@ jobs:
           echo "Extracting Mac packages"
           ./7z/7zz x -y -ocalibre-mac calibre.dmg calibre.app/Contents/Frameworks/plugins/python-lib.bypy.frozen calibre.app/Contents/Frameworks/calibre-launcher.dylib
 
-      - name: Get Python version
-        id: pyver
-        run: |
-          PYV="$(find ./calibre-linux-x64/lib -name 'libpython*' | grep -oP '(?<=libpython)\d\.\d+')"
-          echo "::notice title=Calibre Python Version::$PYV"
-          echo "PYTHON_VERSION=$PYV" >> $GITHUB_OUTPUT
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
 
       - uses: actions/setup-python@v4
         with:
-          python-version: ${{ steps.pyver.outputs.PYTHON_VERSION }}
+          python-version: 3.11
           cache: 'pip'
 
       - name: Install Python requirements
         run: |
           echo "Installing Python Dependencies"
-          pip install -r requirements.txt
+          python3.11 -m pip install -r requirements.txt
 
       - name: Build
         env:
           CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
         run: |
-          python main.py --version $CALIBRE_VERSION
+          python3.11 main.py --version $CALIBRE_VERSION
       
       - name: on error
         if: ${{ failure() }}

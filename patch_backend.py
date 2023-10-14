@@ -131,7 +131,7 @@ def compress(input: str, output: str | None):
 
 
 def compile(input: str, output: str):
-    subprocess.check_output([sys.executable, "-OO", "-m", "py_compile", input])
+    subprocess.check_output(["python3.8", "-OO", "-m", "py_compile", input])
     name, _ = os.path.splitext(input)
     dir = os.path.join(os.path.dirname(output), "__pycache__")
     pyc = glob.glob(os.path.join(dir, f"{name}.*.pyc"))[0]
