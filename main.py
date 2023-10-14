@@ -108,20 +108,6 @@ def main(os: str | None, version: str):
             zip_bypy_path="lib/calibre-extensions/python-lib.bypy.frozen",
         )
 
-    if os is None or (os is not None and os == "linux-arm64"):
-        print("[=] processing Linux arm64 package ...")
-        do_main(
-            version=version,
-            os="linux",
-            package_url=download.URL_LINUX_ARM64,
-            package_name="calibre-arm64.txz",
-            extract_func=extract.extract_txz,
-            extract_path="calibre-linux-arm64",
-            bypy_path="calibre-linux-arm64/lib/calibre-extensions/python-lib.bypy.frozen",
-            launcher_path="calibre-linux-arm64/lib/libcalibre-launcher.so",
-            zip_path=f"patch-linux-arm64-{version}.zip",
-            zip_bypy_path="lib/calibre-extensions/python-lib.bypy.frozen",
-        )
     if os is None or (os is not None and os == "mac"):
         print("[=] processing macOS package ...")
         do_main(

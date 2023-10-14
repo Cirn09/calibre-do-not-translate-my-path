@@ -1,7 +1,4 @@
 on:
-  schedule:
-    # 每天 05:00 执行（北京时间 13：00）
-    - cron:  '0 5 * * *'
   # 允许手动执行
   workflow_dispatch:
     inputs:
@@ -113,8 +110,6 @@ jobs:
           curl "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-64bit-$CALIBRE_VERSION.msi" -o calibre.msi
           echo "Downloading Linux x64 packages v$CALIBRE_VERSION"
           curl "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-$CALIBRE_VERSION-x86_64.txz" -o calibre-x64.txz
-          echo "Downloading Linux arm64 packages v$CALIBRE_VERSION"
-          curl "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-$CALIBRE_VERSION-arm64.txz" -o calibre-arm64.txz
           echo "Downloading Mac packages v$CALIBRE_VERSION"
           curl "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-$CALIBRE_VERSION.dmg" -o calibre.dmg
 
@@ -125,9 +120,6 @@ jobs:
           echo "Extracting Linux x64 packages"
           mkdir calibre-linux-x64
           tar Jxf calibre-x64.txz -C calibre-linux-x64
-          echo "Extracting Linux arm64 packages"
-          mkdir calibre-linux-arm64
-          tar Jxf calibre-arm64.txz -C calibre-linux-arm64
           echo "Extracting Mac packages"
           ./7z/7zz x -y -ocalibre-mac calibre.dmg calibre.app/Contents/Frameworks/plugins/python-lib.bypy.frozen calibre.app/Contents/Frameworks/calibre-launcher.dylib
 
@@ -161,7 +153,7 @@ jobs:
           msiextract --version
           echo "7z version"
           ./7z/7zz i
-          ls -lh calibre-win/PFiles/Calibre2/app/bin/python-lib.bypy.frozen calibre-win/PFiles/Calibre2/app/bin/calibre-launcher.dll calibre-linux-x64/lib/calibre-extensions/python-lib.bypy.frozen calibre-linux-x64/lib/libcalibre-launcher.so calibre-linux-arm64/lib/calibre-extensions/python-lib.bypy.frozen calibre-linux-arm64/lib/libcalibre-launcher.so calibre-mac/calibre.app/Contents/Frameworks/plugins/python-lib.bypy.frozen calibre-mac/calibre.app/Contents/Frameworks/calibre-launcher.dylib
+          ls -lh calibre-win/PFiles/Calibre2/app/bin/python-lib.bypy.frozen calibre-win/PFiles/Calibre2/app/bin/calibre-launcher.dll calibre-linux-x64/lib/calibre-extensions/python-lib.bypy.frozen calibre-linux-x64/lib/libcalibre-launcher.so calibre-mac/calibre.app/Contents/Frameworks/plugins/python-lib.bypy.frozen calibre-mac/calibre.app/Contents/Frameworks/calibre-launcher.dylib
           # echo "ls -lR"
           # ls -lR
 
