@@ -4,30 +4,88 @@ on:
     - cron:  '0 5 * * *'
   # 允许手动执行
   workflow_dispatch:
+    inputs:
+      targetVersion:
+        # 目标版本。不提供时会自动检查、更新代码版本、发布 latest release，提供了则不会更新代码版本，release 也不会 latest
+        description: 'Calibre version'
+        required: false
+        default: ''
 jobs:
   check-update:
     runs-on: ubuntu-latest
     outputs:
-      changed: ${{ steps.check-version.outputs.changed }}
-      version: ${{ steps.check-version.outputs.version }}
+      build: ${{ steps.post.outputs.build }}
+      update: ${{ steps.post.outputs.update }}
+      version: ${{ steps.post.outputs.version }}
     steps:
-      - uses: actions/checkout@v3
+      - name: fetch all tags
+        uses: actions/checkout@v4
+        if: ${{ inputs.targetVersion != '' }}
+        with:
+          fetch-depth: 0
+      - name: fetch latest tag
+        uses: actions/checkout@v4
+        if: ${{ inputs.targetVersion == '' }}
+
+      - name: Pre-check
+        id: pre
+        if: ${{ inputs.targetVersion != '' }}
+        run: |
+          calibre_url="https://raw.githubusercontent.com/kovidgoyal/calibre/v${{ inputs.targetVersion }}/src/calibre/db/backend.py"
+          status_code=`curl -s -o /dev/null -w "%{http_code}" "${calibre_url}"`
+          if [ ${status_code} = "200" ]; then
+            if [ ! $(git tag -l "v${{ inputs.targetVersion }}") ]; then
+              echo "Target version check OK"
+              echo "build=1"                   >> $GITHUB_OUTPUT
+              echo "update=0"                  >> $GITHUB_OUTPUT
+              echo "version=${{ inputs.targetVersion }}"  >> $GITHUB_OUTPUT
+            else
+              # 本仓库 Tag 已存在
+              echo "Tag exists"
+              echo "::error title=Tag exists::Perhaps a patch for v${{ inputs.targetVersion }} has been created"
+              echo "build=0"                   >> $GITHUB_OUTPUT
+              echo "update=0"                  >> $GITHUB_OUTPUT
+            fi
+          else
+            # 目标版本不存在
+            echo "Target version not found"
+            echo "::error title=Invalid version::Calibre v${{ inputs.targetVersion }} not exists"
+            echo "build=0"                     >> $GITHUB_OUTPUT
+            echo "update=0"                    >> $GITHUB_OUTPUT
+          fi
+          cat $GITHUB_OUTPUT
       - name: Check Version
-        id: check-version
+        id: check
+        if: ${{ inputs.targetVersion == '' }}
         run: |
           curl -k https://code.calibre-ebook.com/latest -o REMOTE_VERSION
           echo "version=$(cat REMOTE_VERSION)" >> $GITHUB_OUTPUT
           if diff --brief REMOTE_VERSION CALIBRE_VERSION > /dev/null; then
             echo "::notice title=Calibre Version not Changed::$(cat REMOTE_VERSION)"
-            echo "changed=0" >> $GITHUB_OUTPUT
+            echo "build=0"   >> $GITHUB_OUTPUT
+            echo "update=0"  >> $GITHUB_OUTPUT
           else
             echo "::notice title=New Version Found!::$(cat REMOTE_VERSION)"
-            echo "changed=1" >> $GITHUB_OUTPUT
+            echo "build=1"    >> $GITHUB_OUTPUT
+            echo "update=1"   >> $GITHUB_OUTPUT
           fi
+      - name: Post-check
+        id: post
+        run: |
+          if [ ${{ inputs.targetVersion }} = '' ]; then
+            echo "build=${{ steps.check.outputs.build }}"      >> $GITHUB_OUTPUT
+            echo "update=${{ steps.check.outputs.update }}"    >> $GITHUB_OUTPUT
+            echo "version=${{ steps.check.outputs.version }}"  >> $GITHUB_OUTPUT
+          else
+            echo "build=${{ steps.pre.outputs.build }}"        >> $GITHUB_OUTPUT
+            echo "update=${{ steps.pre.outputs.update }}"      >> $GITHUB_OUTPUT
+            echo "version=${{ steps.pre.outputs.version }}"    >> $GITHUB_OUTPUT
+          fi
+
   build:
     runs-on: ubuntu-latest
     needs: check-update
-    if: needs.check-update.outputs.changed == '1'
+    if: needs.check-update.outputs.build == '1'
     steps:
       - uses: actions/checkout@v3
       - name: Install Dependencies
@@ -108,11 +166,12 @@ jobs:
           # ls -lR
 
       - name: Update Code
+        if: needs.check-update.outputs.update == '1'
         env: 
           CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
         run: |
           echo -n $CALIBRE_VERSION > CALIBRE_VERSION
-          git config --local user.email github-actions@github.com
+          git config --local user.email actions@github.com
           git config --local user.name github-actions
           git add CALIBRE_VERSION
           git commit -m "Action: Update to v$CALIBRE_VERSION"
@@ -124,6 +183,9 @@ jobs:
           body: Calibre v${{ needs.check-update.outputs.version }}
           draft: false
           tag_name: v${{ needs.check-update.outputs.version }}
+          # 因为 softprops/action-gh-releas 还没加 make_latest 选项，所以先用 prerelease标记
+          # 相关 PR：https://github.com/softprops/action-gh-release/pull/304
+          prerelease: ${{ needs.check-update.outputs.update }}
           files: |
             patch-win-${{ needs.check-update.outputs.version }}.zip
             patch-linux-x64-${{ needs.check-update.outputs.version }}.zip
