@@ -30,6 +30,18 @@ Auto check update and release at 05:00 UTC+0 every day using Github Action.
 1. Unzip downloaded file and get `python-lib.bypy.frozen` in the subdirectory.
 2. Open `Finder`, right-click `Calibre` in `/Applications`, choose  `Show package content`. Copy downloaded `python-lib.bypy.frozen` to `Contents/Frameworks/plugins`. Close `Finder` and now enjoy your new `Calibre`.
 
+### Older macOS
+
+a. 官方最后一个支持旧版 macOS 的版本：[v5.44.0](https://download.calibre-ebook.com/5.44.0/calibre-5.44.0.dmg)，以及对应的补丁：[v5.44.0](https://github.com/Cirn09/calibre-do-not-translate-my-path/releases/download/v5.44.0/patch-mac-5.44.0.zip)
+
+b. 实测可运行的版本：[v6.11.0](https://download.calibre-ebook.com/6.11.0/calibre-6.11.0.dmg)，以及对应的补丁：[v6.11.0](https://github.com/Cirn09/calibre-do-not-translate-my-path/releases/download/v6.11.0/patch-mac-6.11.0.zip)
+
+<br/>
+
+a. latest offical support: [v5.44.0](https://download.calibre-ebook.com/5.44.0/calibre-5.44.0.dmg), and patch: [v5.44.0](https://github.com/Cirn09/calibre-do-not-translate-my-path/releases/download/v5.44.0/patch-mac-5.44.0.zip)
+
+b. Actually compatible: [v6.11.0](https://download.calibre-ebook.com/6.11.0/calibre-6.11.0.dmg), and patch: [v6.11.0](https://github.com/Cirn09/calibre-do-not-translate-my-path/releases/download/v6.11.0/patch-mac-6.11.0.zip)
+
 ### Additional
 
 如果你已经创建了书库，希望将已有的书库改成非英文路径：
