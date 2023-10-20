@@ -72,7 +72,7 @@ jobs:
       - name: Post-check
         id: post
         run: |
-          if [ ${{ inputs.targetVersion }} = '' ]; then
+          if [ "${{ inputs.targetVersion }}" = '' ]; then
             echo "build=${{ steps.check.outputs.build }}"      >> $GITHUB_OUTPUT
             echo "update=${{ steps.check.outputs.update }}"    >> $GITHUB_OUTPUT
             echo "version=${{ steps.check.outputs.version }}"  >> $GITHUB_OUTPUT
@@ -153,7 +153,7 @@ jobs:
           CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
         run: |
           python main.py --version $CALIBRE_VERSION
-      
+
       - name: on error
         if: ${{ failure() }}
         run: |
@@ -167,7 +167,7 @@ jobs:
 
       - name: Update Code
         if: needs.check-update.outputs.update == '1'
-        env: 
+        env:
           CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
         run: |
           echo -n $CALIBRE_VERSION > CALIBRE_VERSION
