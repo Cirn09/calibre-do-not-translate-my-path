@@ -42,7 +42,7 @@ WORD_BYTES = 8  # 目前 Calibre 只编译64位，字长统统 8 字节
 
 # PYC_ANCHOR = b"Crypto/Cipher/AES.pyc"
 # PYC_BACKEND = b"calibre/db/backend.pyc"
-# TODO: 等 lief 0.13 release
+# TODO: 等 lief 0.13 release (https://github.com/lief-project/LIEF/issues/880)
 PYC_ANCHOR = "Crypto/Cipher/AES.pyc"
 PYC_ANCHOR = "Crypto/Cipher/_EKSBlowfish.pyc"
 PYC_BACKEND = "calibre/db/backend.pyc"

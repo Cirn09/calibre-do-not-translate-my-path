@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import ast
 import sys
 import subprocess
@@ -62,7 +64,7 @@ def patch(input: str, output: str | None, os: str):
     if output is None:
         output = input
 
-    with open(input, "r") as f:
+    with open(input, "r", encoding = 'utf8') as f:
         old = f.read()
 
     ascii_filaname_sum = old.count("ascii_filename")
@@ -79,7 +81,7 @@ def patch(input: str, output: str | None, os: str):
 
     new = old.replace(PATCH_ANCHOR, code, 1)
 
-    with open(output, "w") as f:
+    with open(output, "w", encoding = 'utf8') as f:
         f.write(new)
 
 
@@ -88,12 +90,14 @@ def compress_sql(sql: str):
         sql, strip_comments=True, strip_whitespace=True
     )  # strip_whitespace 在文档里没写，是Copilot自动补的。检查了源码，还真有这个选项
 
+def is_str(node: ast.expr) -> bool:
+    return isinstance(node, ast.Constant) and isinstance(node.value, str)
 
 def compress(input: str, output: str | None):
     if output is None:
         output = input
 
-    with open(input, "r") as f:
+    with open(input, "r", encoding = 'utf8') as f:
         code = f.read()
 
     _ast = ast.parse(code)
@@ -104,11 +108,10 @@ def compress(input: str, output: str | None):
             and isinstance(node.func, ast.Attribute)
             and node.func.attr in ("execute", "executemany")
             and len(node.args) > 0
-            and isinstance(node.args[0], ast.Str)
+            and is_str(node.args[0])
         ):  # 压缩所有 execute*的参数
             sqlcode = node.args[0].value
             sql = compress_sql(sqlcode)
-            # node.args[0] = ast.Str(sql)
             node.args[0].value = sql
         elif (
             isinstance(node, ast.Assign)
@@ -123,10 +126,10 @@ def compress(input: str, output: str | None):
             #         else:
             #             line = [...]
             for _node in ast.walk(node):
-                if isinstance(_node, ast.Str):
+                if is_str(_node):
                     _node.value = compress_sql(_node.value)
 
-    with open(output, "w") as f:
+    with open(output, "w", encoding = 'utf8') as f:
         f.write(ast.unparse(_ast))
 
 
