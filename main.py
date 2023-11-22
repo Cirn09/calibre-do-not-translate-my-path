@@ -79,7 +79,7 @@ def main(os: str | None, version: str):
         download.URL_BACKEND.format(version=version), "backend-original.py"
     )
 
-    if os is None or (os is not None and os == "win"):
+    if os is None or os == "win":
         print("[=] processing Windows package ...")
         do_main(
             version=version,
@@ -88,12 +88,12 @@ def main(os: str | None, version: str):
             package_name="calibre.msi",
             extract_func=extract.extract_msi,
             extract_path="calibre-win",
-            bypy_path="calibre-win/PFiles/Calibre2/app/bin/python-lib.bypy.frozen",
-            launcher_path="calibre-win/PFiles/Calibre2/app/bin/calibre-launcher.dll",
+            bypy_path="calibre-win/PFiles64/Calibre2/app/bin/python-lib.bypy.frozen",
+            launcher_path="calibre-win/PFiles64/Calibre2/app/bin/calibre-launcher.dll",
             zip_path=f"patch-win-{version}.zip",
             zip_bypy_path="Calibre2/app/bin/python-lib.bypy.frozen",
         )
-    if os is None or (os is not None and os == "linux-x64"):
+    if os is None or os == "linux-x64":
         print("[=] processing Linux x64 package ...")
         do_main(
             version=version,
@@ -108,7 +108,7 @@ def main(os: str | None, version: str):
             zip_bypy_path="lib/calibre-extensions/python-lib.bypy.frozen",
         )
 
-    if os is None or (os is not None and os == "linux-arm64"):
+    if os is None or os == "linux-arm64":
         print("[=] processing Linux arm64 package ...")
         do_main(
             version=version,
@@ -122,7 +122,7 @@ def main(os: str | None, version: str):
             zip_path=f"patch-linux-arm64-{version}.zip",
             zip_bypy_path="lib/calibre-extensions/python-lib.bypy.frozen",
         )
-    if os is None or (os is not None and os == "mac"):
+    if os is None or os == "mac":
         print("[=] processing macOS package ...")
         do_main(
             version=version,
