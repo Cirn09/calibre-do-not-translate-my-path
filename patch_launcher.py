@@ -44,7 +44,6 @@ WORD_BYTES = 8  # 目前 Calibre 只编译64位，字长统统 8 字节
 # PYC_BACKEND = b"calibre/db/backend.pyc"
 # TODO: 等 lief 0.13 release (https://github.com/lief-project/LIEF/issues/880)
 PYC_ANCHOR = "Crypto/Cipher/AES.pyc"
-PYC_ANCHOR = "Crypto/Cipher/_EKSBlowfish.pyc"
 PYC_BACKEND = "calibre/db/backend.pyc"
 RE_PYC = re.compile(rb"""[a-zA-Z0-9~!@#$%^&*()_+`\-={}\[\]\|\\:;"'<>,.?/]+\.pyc\0""")
 
@@ -137,6 +136,11 @@ class PatchBase(object):
             self.binary.imagebase + self.seg_str.virtual_address + anchor_offset
         )
         p = self.seg_pstr.search(anchor_addr, size=WORD_BYTES)
+        if p == 0xFFFFFFFFFFFFFFFF:
+            # 不知道为什么，macOS elf 部分数据指针有 0x10 0000 00000000 偏移，部分指针又没有偏移，ida 能纠正这个偏移
+            # 搜了一下没找着是什么技术
+            # 只搜索 4 字节能消除这个偏移的影响
+            p = self.seg_pstr.search(anchor_addr, size=4)
         assert p % WORD_BYTES == 0
 
         seg_str_start = self.binary.imagebase + self.seg_str.offset
@@ -173,6 +177,8 @@ class PatchBase(object):
         offset_str = self.seg_str.search(PYC_BACKEND)
         va = self.binary.imagebase + self.seg_str.virtual_address + offset_str
         offset_pstr = self.seg_pstr.search(va, size=WORD_BYTES)
+        if offset_pstr == 0xFFFFFFFFFFFFFFFF:
+            offset_pstr = self.seg_pstr.search(va, size=4)
         index = (offset_pstr - offset_pstr_start) // WORD_BYTES
 
         foa_offset = (
