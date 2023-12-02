@@ -86,31 +86,35 @@ jobs:
     runs-on: ubuntu-latest
     needs: check-update
     if: needs.check-update.outputs.build == '1'
+    env:
+      CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
+      patch_linux_x64_v1: linux-x64-patch-backend-v${{ needs.check-update.outputs.version }}.zip
+      patch_linux_x64_v2: linux-x64-patch-backend+update-v${{ needs.check-update.outputs.version }}.zip
+      patch_linux_x64_txz: linux-x64-patched-v${{ needs.check-update.outputs.version }}.txz
+
+      patch_linux_arm64_v1: linux-arm64-patch-backend-v${{ needs.check-update.outputs.version }}.zip
+      patch_linux_arm64_v2: linux-arm64-patch-backend+update-v${{ needs.check-update.outputs.version }}.zip
+      patch_linux_arm64_txz: linux-arm64-patched-v${{ needs.check-update.outputs.version }}.txz
+
+      patch_mac_v1: mac-patch-backend-v${{ needs.check-update.outputs.version }}.zip
+      patch_mac_v2: mac-patch-backend+update-v${{ needs.check-update.outputs.version }}.zip
+    outputs:
+      pyver: ${{ steps.pyver.outputs.PYTHON_VERSION }}
     steps:
       - uses: actions/checkout@v3
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          echo "Installing msitools"
-          sudo apt-get install msitools
+
           echo "Installing 7z"
           curl https://www.7-zip.org/a/7z2201-linux-x64.tar.xz -o 7z.tar.xz
           mkdir 7z
-          tar -xJf 7z.tar.xz -C 7z
+          tar Jxf 7z.tar.xz -C 7z
           echo "PATH=$(pwd)/7z:$PATH" >> $GITHUB_ENV
+          ./7z/7zz i
 
       - name: Download packages
-        env:
-          CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
         run: |
-          echo "Downloading backend.py v$CALIBRE_VERSION"
-          curl "https://raw.githubusercontent.com/kovidgoyal/calibre/v$CALIBRE_VERSION/src/calibre/db/backend.py" -o backend-original.py
-
-          ascii_filename_times=$(grep -o "ascii_filename" ./backend-original.py | wc -l)
-          echo "::notice title=\"ascii_filename\" appeared $ascii_filename_times times in backend.py::$ascii_filename_times"
-
-          echo "Downloading Windows installer v$CALIBRE_VERSION"
-          curl "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-64bit-$CALIBRE_VERSION.msi" -o calibre.msi
           echo "Downloading Linux x64 packages v$CALIBRE_VERSION"
           curl "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-$CALIBRE_VERSION-x86_64.txz" -o calibre-x64.txz
           echo "Downloading Linux arm64 packages v$CALIBRE_VERSION"
@@ -118,16 +122,19 @@ jobs:
           echo "Downloading Mac packages v$CALIBRE_VERSION"
           curl "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-$CALIBRE_VERSION.dmg" -o calibre.dmg
 
+          echo "Download Calibre source"
+          git clone --depth 1 --branch v$CALIBRE_VERSION https://github.com/kovidgoyal/calibre.git
+
       - name: Extract packages
         run: |
-          echo "Extracting Windows installer"
-          msiextract calibre.msi -C calibre-win
           echo "Extracting Linux x64 packages"
           mkdir calibre-linux-x64
-          tar Jxf calibre-x64.txz -C calibre-linux-x64
+          tar Jxvf calibre-x64.txz -C calibre-linux-x64
+
           echo "Extracting Linux arm64 packages"
           mkdir calibre-linux-arm64
-          tar Jxf calibre-arm64.txz -C calibre-linux-arm64
+          tar Jxvf calibre-arm64.txz -C calibre-linux-arm64
+
           echo "Extracting Mac packages"
           ./7z/7zz x -y -ocalibre-mac calibre.dmg calibre.app/Contents/Frameworks/plugins/python-lib.bypy.frozen calibre.app/Contents/Frameworks/calibre-launcher.dylib
 
@@ -145,30 +152,270 @@ jobs:
 
       - name: Install Python requirements
         run: |
-          echo "Installing Python Dependencies"
           pip install -r requirements.txt
 
-      - name: Build
-        env:
-          CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
+      - name: Patch py
         run: |
-          python main.py --version $CALIBRE_VERSION
+          echo "[=] Patch backend.py"
+          python patch_backend.py --os unix calibre/src/calibre/db/backend.py backend.py
+          python compile.py backend.py backend.pyc
 
-      - name: on error
-        if: ${{ failure() }}
+          echo "[=] Patch update.py"
+          python patch_update.py calibre/src/calibre/gui2/update.py update.py
+          python compile.py update.py update.pyc
+
+      - name: Patch bypy linux x64
         run: |
-          echo "msiextract version"
-          msiextract --version
-          echo "7z version"
-          ./7z/7zz i
-          ls -lh calibre-win/PFiles/Calibre2/app/bin/python-lib.bypy.frozen calibre-win/PFiles/Calibre2/app/bin/calibre-launcher.dll calibre-linux-x64/lib/calibre-extensions/python-lib.bypy.frozen calibre-linux-x64/lib/libcalibre-launcher.so calibre-linux-arm64/lib/calibre-extensions/python-lib.bypy.frozen calibre-linux-arm64/lib/libcalibre-launcher.so calibre-mac/calibre.app/Contents/Frameworks/plugins/python-lib.bypy.frozen calibre-mac/calibre.app/Contents/Frameworks/calibre-launcher.dylib
-          # echo "ls -lR"
-          # ls -lR
+          mkdir -p lib/calibre-extensions/
 
+          echo "[=] Patch Linux x64 bypy"
+          echo "[==] Patch bypy:backend.pyc"
+          chmod 644 calibre-linux-x64/lib/calibre-extensions/python-lib.bypy.frozen
+          python patch_bypy.py                                                      \
+            --os linux                                                              \
+            --bypy calibre-linux-x64/lib/calibre-extensions/python-lib.bypy.frozen  \
+            --launcher calibre-linux-x64/lib/libcalibre-launcher.so                 \
+            --new-pyc-file backend.pyc                                              \
+            --embed_path "calibre/db/backend.pyc"
+
+          cp calibre-linux-x64/lib/calibre-extensions/python-lib.bypy.frozen        \
+            lib/calibre-extensions/python-lib.bypy.frozen
+          zip -r $patch_linux_x64_v1 lib
+
+          echo "[==] Patch bypy:update.pyc"
+          python patch_bypy.py                                                      \
+            --os linux                                                              \
+            --bypy calibre-linux-x64/lib/calibre-extensions/python-lib.bypy.frozen  \
+            --launcher calibre-linux-x64/lib/libcalibre-launcher.so                 \
+            --new-pyc-file update.pyc                                               \
+            --embed_path "calibre/gui2/update.py"
+
+          cp calibre-linux-x64/lib/calibre-extensions/python-lib.bypy.frozen        \
+            lib/calibre-extensions/python-lib.bypy.frozen
+          zip -r $patch_linux_x64_v2 lib
+
+          tar Jcf $patch_linux_x64_txz calibre-linux-x64/*
+
+      - name: Patch bypy linux arm64
+        run: |
+          mkdir -p lib/calibre-extensions/
+
+          echo "[=] Patch Linux arm64 bypy"
+          echo "[==] Patch bypy:backend.pyc"
+          chmod 644 calibre-linux-arm64/lib/calibre-extensions/python-lib.bypy.frozen
+          python patch_bypy.py                                                      \
+            --os linux                                                              \
+            --bypy calibre-linux-arm64/lib/calibre-extensions/python-lib.bypy.frozen \
+            --launcher calibre-linux-arm64/lib/libcalibre-launcher.so               \
+            --new-pyc-file backend.pyc                                              \
+            --embed_path "calibre/db/backend.pyc"
+
+          cp calibre-linux-arm64/lib/calibre-extensions/python-lib.bypy.frozen      \
+            lib/calibre-extensions/python-lib.bypy.frozen
+          zip -r $patch_linux_arm64_v1 lib
+
+          echo "[==] Patch bypy:update.pyc"
+          python patch_bypy.py                                                      \
+            --os linux                                                              \
+            --bypy calibre-linux-arm64/lib/calibre-extensions/python-lib.bypy.frozen \
+            --launcher calibre-linux-arm64/lib/libcalibre-launcher.so               \
+            --new-pyc-file update.pyc                                               \
+            --embed_path "calibre/gui2/update.py"
+
+          cp calibre-linux-arm64/lib/calibre-extensions/python-lib.bypy.frozen      \
+            lib/calibre-extensions/python-lib.bypy.frozen
+          zip -r $patch_linux_arm64_v2 lib
+
+          tar Jcf $patch_linux_arm64_txz calibre-linux-arm64/*
+
+      - name: Patch bypy macOS
+        run: |
+          echo "[=] Patch macOS bypy"
+          echo "[==] Patch bypy:backend.pyc"
+          chmod 644 calibre-mac/calibre.app/Contents/Frameworks/plugins/python-lib.bypy.frozen
+          python patch_bypy.py                                                      \
+            --os mac                                                                \
+            --bypy calibre-mac/calibre.app/Contents/Frameworks/plugins/python-lib.bypy.frozen \
+            --launcher calibre-mac/calibre.app/Contents/Frameworks/calibre-launcher.dylib \
+            --new-pyc-file backend.pyc                                              \
+            --embed_path "calibre/db/backend.pyc"
+
+          cp calibre-mac/calibre.app/Contents/Frameworks/plugins/python-lib.bypy.frozen .
+          zip $patch_mac_v1 python-lib.bypy.frozen
+
+          echo "[==] Patch bypy:update.pyc"
+          python patch_bypy.py                                                      \
+            --os mac                                                                \
+            --bypy calibre-mac/calibre.app/Contents/Frameworks/plugins/python-lib.bypy.frozen \
+            --launcher calibre-mac/calibre.app/Contents/Frameworks/calibre-launcher.dylib \
+            --new-pyc-file update.pyc                                              \
+            --embed_path "calibre/gui2/update.py"
+
+          cp calibre-mac/calibre.app/Contents/Frameworks/plugins/python-lib.bypy.frozen .
+          zip $patch_mac_v2 python-lib.bypy.frozen
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: patch_linux_x64_v1
+          path: ${{ env.patch_linux_x64_v1 }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: patch_linux_x64_v2
+          path: ${{ env.patch_linux_x64_v2 }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: patch_linux_x64_txz
+          path: ${{ env.patch_linux_x64_txz }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: patch_linux_arm64_v1
+          path: ${{ env.patch_linux_arm64_v1 }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: patch_linux_arm64_v2
+          path: ${{ env.patch_linux_arm64_v2 }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: patch_linux_arm64_txz
+          path: ${{ env.patch_linux_arm64_txz }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: patch_mac_v1
+          path: ${{ env.patch_mac_v1 }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: patch_mac_v2
+          path: ${{ env.patch_mac_v2 }}
+
+  build-win:
+    runs-on: windows-latest
+    needs: [check-update, build]
+    env:
+      CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
+      patch_win_v1: win-patch-backend-v${{ needs.check-update.outputs.version }}.zip
+      patch_win_v2: win-patch-backend+update-v${{ needs.check-update.outputs.version }}.zip
+      patch_win_msi: win-patched-${{ needs.check-update.outputs.version }}.msi
+    if: needs.check-update.outputs.build == '1'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Dependencies
+        run: |
+          echo "Downloading msi2xml"
+          curl https://jaist.dl.sourceforge.net/project/msi2xml/msi2xml/2.2.1/msi2xml-2.2.1.957-bin.zip -o msi2xml.zip
+          Expand-Archive msi2xml.zip -DestinationPath .
+
+      - name: Download packages
+        run: |
+          echo "Downloading Windows msi v$Env:CALIBRE_VERSION"
+          curl "https://download.calibre-ebook.com/$Env:CALIBRE_VERSION/calibre-64bit-$Env:CALIBRE_VERSION.msi" -o calibre.msi
+
+          echo "Download Calibre source"
+          git clone --depth 1 --branch v$Env:CALIBRE_VERSION https://github.com/kovidgoyal/calibre.git
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ needs.build.outputs.pyver }}
+          cache: 'pip'
+
+      - name: Install Python requirements
+        run: |
+          pip install -r requirements.txt
+
+      - name: Extract
+        run: |
+          .\msi2xml.exe -c calibre-win calibre.msi
+
+      - name: Patch py
+        run: |
+          echo "[=] Patch backend.py"
+          python patch_backend.py --os win calibre\src\calibre\db\backend.py backend.py
+          python compile.py backend.py backend.pyc
+
+          echo "[=] Patch update.py"
+          python patch_update.py calibre\src\calibre\gui2\update.py update.py
+          python compile.py update.py update.pyc
+
+      - name: Patch bypy
+        run: |
+          mkdir -p Calibre2\app\bin
+
+          echo "[=] Patch bypy"
+          $launcher=python xmltool.py find calibre.xml calibre-launcher.dll
+          echo "launcher: $launcher"
+          $bypy=python xmltool.py find calibre.xml python-lib.bypy.frozen
+          echo "bypy: $bypy"
+          echo "[==] Patch bypy:backend.pyc"
+          python patch_bypy.py                          `
+                  --os win                              `
+                  --bypy $bypy                          `
+                  --launcher $launcher                  `
+                  --new-pyc-file backend.pyc            `
+                  --embed_path "calibre/db/backend.pyc"
+
+          cp $bypy Calibre2\app\bin\python-lib.bypy.frozen
+          Compress-Archive    `
+            -Path .\Calibre2  `
+            -DestinationPath $Env:patch_win_v1
+
+          echo "[==] Patch bypy:update.pyc"
+          python patch_bypy.py                          `
+                  --os win                              `
+                  --bypy $bypy                          `
+                  --launcher $launcher                  `
+                  --new-pyc-file update.pyc             `
+                  --embed_path "calibre/gui2/update.py"
+
+          cp $bypy Calibre2\app\bin\python-lib.bypy.frozen
+          Compress-Archive    `
+            -Path .\Calibre2  `
+            -DestinationPath $Env:patch_win_v2
+
+          echo "[=] Patch xml"
+          python xmltool.py patch calibre.xml python-lib.bypy.frozen $bypy
+
+      - name: Repack
+        run: |
+          .\xml2msi.exe -o $Env:patch_win_msi calibre.xml
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: patch_win_v1
+          path: ${{ env.patch_win_v1 }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: patch_win_v2
+          path: ${{ env.patch_win_v2 }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: patch_win_msi
+          path: ${{ env.patch_win_msi }}
+
+
+  update-upload:
+    runs-on: ubuntu-latest
+    needs: [check-update, build, build-win]
+    env:
+      CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
+
+      patch_win_v1: win-patch-backend-v${{ needs.check-update.outputs.version }}.zip
+      patch_win_v2: win-patch-backend+update-v${{ needs.check-update.outputs.version }}.zip
+      patch_win_msi: win-patched-${{ needs.check-update.outputs.version }}.msi
+
+      patch_linux_x64_v1: linux-x64-patch-backend-v${{ needs.check-update.outputs.version }}.zip
+      patch_linux_x64_v2: linux-x64-patch-backend+update-v${{ needs.check-update.outputs.version }}.zip
+      patch_linux_x64_txz: linux-x64-patched-v${{ needs.check-update.outputs.version }}.txz
+
+      patch_linux_arm64_v1: linux-arm64-patch-backend-v${{ needs.check-update.outputs.version }}.zip
+      patch_linux_arm64_v2: linux-arm64-patch-backend+update-v${{ needs.check-update.outputs.version }}.zip
+      patch_linux_arm64_txz: linux-arm64-patched-v${{ needs.check-update.outputs.version }}.txz
+
+      patch_mac_v1: mac-patch-backend-v${{ needs.check-update.outputs.version }}.zip
+      patch_mac_v2: mac-patch-backend+update-v${{ needs.check-update.outputs.version }}.zip
+
+    steps:
+      - uses: actions/checkout@v3
       - name: Update Code
         if: needs.check-update.outputs.update == '1'
-        env:
-          CALIBRE_VERSION: ${{ needs.check-update.outputs.version }}
         run: |
           echo -n $CALIBRE_VERSION > CALIBRE_VERSION
           git config --local user.email actions@github.com
@@ -177,17 +424,35 @@ jobs:
           git commit -m "Action: Update to v$CALIBRE_VERSION"
           git push
 
+      - uses: actions/download-artifact@v3
+
       - name: Create Release
         uses: softprops/action-gh-release@v0.1.15
         with:
-          body: Calibre v${{ needs.check-update.outputs.version }}
-          draft: false
-          tag_name: v${{ needs.check-update.outputs.version }}
-          # 因为 softprops/action-gh-releas 还没加 make_latest 选项，所以先用 prerelease 标记
-          # 相关 PR：https://github.com/softprops/action-gh-release/pull/304
-          prerelease: ${{ !needs.check-update.outputs.update }}
-          files: |
-            patch-win-${{ needs.check-update.outputs.version }}.zip
-            patch-linux-x64-${{ needs.check-update.outputs.version }}.zip
-            patch-linux-arm64-${{ needs.check-update.outputs.version }}.zip
-            patch-mac-${{ needs.check-update.outputs.version }}.zip
+          body: |
+            ## Calibre v${{ env.CALIBRE_VERSION }}
+            原版下载地址：https://calibre-ebook.com/download
+            原版 Win：https://calibre-ebook.com/dist/win64
+            原版 Linux x64：https://calibre-ebook.com/dist/linux-x86_64
+            原版 Linux arm64：https://calibre-ebook.com/dist/linux-arm64
+            原版 macOS：https://calibre-ebook.com/dist/osx
+        draft: false
+        tag_name: v${{ CALIBRE_VERSION }}
+        # 因为 softprops/action-gh-releas 还没加 make_latest 选项，所以先用 prerelease 标记
+        # 相关 PR：https://github.com/softprops/action-gh-release/pull/304
+        prerelease: ${{ !needs.check-update.outputs.update }}
+        files: |
+          patch_win_v1/${{ env.patch_win_v1 }}
+          patch_win_v2/${{ env.patch_win_v2 }}
+          patch_win_msi/${{ env.patch_win_msi }}
+
+          patch_linux_x64_v1/${{ env.patch_linux_x64_v1 }}
+          patch_linux_x64_v2/${{ env.patch_linux_x64_v2 }}
+          patch_linux_x64_txz/${{ env.patch_linux_x64_txz }}
+
+          patch_linux_arm64_v1/${{ env.patch_linux_arm64_v1 }}
+          patch_linux_arm64_v2/${{ env.patch_linux_arm64_v2 }}
+          patch_linux_arm64_txz/${{ env.patch_linux_arm64_txz }}
+
+          patch_mac_v1/${{ env.patch_mac_v1 }}
+          patch_mac_v2/${{ env.patch_mac_v2 }}

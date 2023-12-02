@@ -6,7 +6,7 @@ import stat
 import typing
 
 import click
-import lief  # just use lief to parse binary, manually patch
+import lief
 
 # Config = namedtuple("Config", ("seg_str", "seg_pstr", "seg_index", "sizeof_long"))
 
@@ -40,15 +40,12 @@ MACHO_CONFIG = Config("__cstring", "__data", "__const", 8)
 
 WORD_BYTES = 8  # 目前 Calibre 只编译64位，字长统统 8 字节
 
-# PYC_ANCHOR = b"Crypto/Cipher/AES.pyc"
-# PYC_BACKEND = b"calibre/db/backend.pyc"
 # TODO: 等 lief 0.13 release (https://github.com/lief-project/LIEF/issues/880)
 PYC_ANCHOR = "Crypto/Cipher/AES.pyc"
-PYC_BACKEND = "calibre/db/backend.pyc"
 RE_PYC = re.compile(rb"""[a-zA-Z0-9~!@#$%^&*()_+`\-={}\[\]\|\\:;"'<>,.?/]+\.pyc\0""")
 
 
-class PatchBase(object):
+class HelperBase(object):
     config: Config
     binary: Binary
 
@@ -131,7 +128,6 @@ class PatchBase(object):
         anchor_offset = self.seg_str.search(PYC_ANCHOR)
         if anchor_offset == 0xFFFFFFFFFFFFFFFF:  # # TODO: 等 lief 0.13 release
             raise PstrNotFoundError(f'PYC anchor("{PYC_ANCHOR}") not found')
-        # anchor_addr = self.seg_str.offset + anchor_offset + self.binary.imagebase
         anchor_addr = (
             self.binary.imagebase + self.seg_str.virtual_address + anchor_offset
         )
@@ -141,7 +137,8 @@ class PatchBase(object):
             # 搜了一下没找着是什么技术
             # 只搜索 4 字节能消除这个偏移的影响
             p = self.seg_pstr.search(anchor_addr, size=4)
-        assert p % WORD_BYTES == 0
+        if p % WORD_BYTES != 0:
+            raise ValueError("search result not algined!")
 
         seg_str_start = self.binary.imagebase + self.seg_str.offset
         seg_str_end = seg_str_start + len(self.seg_str.content)
@@ -161,7 +158,7 @@ class PatchBase(object):
         # self.offset_pstr = p
         return p
 
-    def find_backend(self) -> tuple[int, int]:
+    def find_target(self, target) -> tuple[int, int]:
         offset_index = self.find_index()
         offset_pstr_start = self.find_pstr()
 
@@ -174,7 +171,7 @@ class PatchBase(object):
         )
         print(f"[+] PYC string table foa: {foa_pstr:#x}, va: {va_pstr:#x}")
 
-        offset_str = self.seg_str.search(PYC_BACKEND)
+        offset_str = self.seg_str.search(target)
         va = self.binary.imagebase + self.seg_str.virtual_address + offset_str
         offset_pstr = self.seg_pstr.search(va, size=WORD_BYTES)
         if offset_pstr == 0xFFFFFFFFFFFFFFFF:
@@ -195,7 +192,7 @@ class PatchBase(object):
         )
 
         print(
-            f"[+] PYC backend index: {index:#x}, offset: {foa_offset:#x}, size: {foa_size:#x}"
+            f"[+] PYC {target} index: {index:#x}, offset: {foa_offset:#x}, size: {foa_size:#x}"
         )
 
         offset_seg_offset = (
@@ -217,11 +214,11 @@ class PatchBase(object):
             "little",
         )
 
-        print(f"[+] PYC backend offset: {offset:#x}, size: {size:#x}")
+        print(f"[+] PYC {target} offset: {offset:#x}, size: {size:#x}")
         return offset, size
 
 
-class PatchPE(PatchBase):
+class PEHelper(HelperBase):
     binary: lief.PE.Binary
 
     def __init__(self, path):
@@ -231,7 +228,7 @@ class PatchPE(PatchBase):
         self.display_offset = 0
 
 
-class PatchELF(PatchBase):
+class ELFHelper(HelperBase):
     binary: lief.ELF.Binary
 
     def __init__(self, path):
@@ -241,7 +238,7 @@ class PatchELF(PatchBase):
         self.display_offset = 0
 
 
-class PatchMachO(PatchBase):
+class MachOHelper(HelperBase):
     binary: lief.MachO.Binary
     fat_binary: lief.MachO.FatBinary
 
@@ -254,22 +251,25 @@ class PatchMachO(PatchBase):
 
 
 @click.command()
-@click.argument("input", type=click.Path(exists=True), required=True)
+@click.argument("launcher", type=click.Path(exists=True), required=True)
+@click.argument("target", type=click.Path(exists=False), required=True)
 @click.option(
     "os", "-o", "--os", type=click.Choice(["win", "linux", "mac"]), default="win"
 )
-def cli_find(input: str, os: str):
-    find(input, os)
+def cli_find(launcher: str, target: str, os: str):
+    find(launcher, target, os)
 
 
-def find(input: str, os: str) -> tuple[int, int]:
+def find(launcher: str, target: str, os: str = "win") -> tuple[int, int]:
     if os == "win":
-        exe = PatchPE(input)
+        exe = PEHelper(launcher)
     elif os == "linux":
-        exe = PatchELF(input)
+        exe = ELFHelper(launcher)
     elif os == "mac":
-        exe = PatchMachO(input)
-    offset, size = exe.find_backend()
+        exe = MachOHelper(launcher)
+    else:
+        raise ValueError(f"Unknow os: {os}")
+    offset, size = exe.find_target(target)
 
     return offset, size
 
