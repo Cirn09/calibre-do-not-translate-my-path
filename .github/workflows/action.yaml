@@ -436,23 +436,23 @@ jobs:
             原版 Linux x64：https://calibre-ebook.com/dist/linux-x86_64
             原版 Linux arm64：https://calibre-ebook.com/dist/linux-arm64
             原版 macOS：https://calibre-ebook.com/dist/osx
-        draft: false
-        tag_name: v${{ CALIBRE_VERSION }}
-        # 因为 softprops/action-gh-releas 还没加 make_latest 选项，所以先用 prerelease 标记
-        # 相关 PR：https://github.com/softprops/action-gh-release/pull/304
-        prerelease: ${{ !needs.check-update.outputs.update }}
-        files: |
-          patch_win_v1/${{ env.patch_win_v1 }}
-          patch_win_v2/${{ env.patch_win_v2 }}
-          patch_win_msi/${{ env.patch_win_msi }}
+          draft: false
+          tag_name: v${{ env.CALIBRE_VERSION }}
+          # 因为 softprops/action-gh-releas 还没加 make_latest 选项，所以先用 prerelease 标记
+          # 相关 PR：https://github.com/softprops/action-gh-release/pull/304
+          prerelease: ${{ !needs.check-update.outputs.update }}
+          files: |
+            patch_win_v1/${{ env.patch_win_v1 }}
+            patch_win_v2/${{ env.patch_win_v2 }}
+            patch_win_msi/${{ env.patch_win_msi }}
 
-          patch_linux_x64_v1/${{ env.patch_linux_x64_v1 }}
-          patch_linux_x64_v2/${{ env.patch_linux_x64_v2 }}
-          patch_linux_x64_txz/${{ env.patch_linux_x64_txz }}
+            patch_linux_x64_v1/${{ env.patch_linux_x64_v1 }}
+            patch_linux_x64_v2/${{ env.patch_linux_x64_v2 }}
+            patch_linux_x64_txz/${{ env.patch_linux_x64_txz }}
 
-          patch_linux_arm64_v1/${{ env.patch_linux_arm64_v1 }}
-          patch_linux_arm64_v2/${{ env.patch_linux_arm64_v2 }}
-          patch_linux_arm64_txz/${{ env.patch_linux_arm64_txz }}
+            patch_linux_arm64_v1/${{ env.patch_linux_arm64_v1 }}
+            patch_linux_arm64_v2/${{ env.patch_linux_arm64_v2 }}
+            patch_linux_arm64_txz/${{ env.patch_linux_arm64_txz }}
 
-          patch_mac_v1/${{ env.patch_mac_v1 }}
-          patch_mac_v2/${{ env.patch_mac_v2 }}
+            patch_mac_v1/${{ env.patch_mac_v1 }}
+            patch_mac_v2/${{ env.patch_mac_v2 }}
