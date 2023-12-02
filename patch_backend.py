@@ -26,7 +26,7 @@ def safe_filename(filename):
 
 ascii_filename = safe_filename
 """
-PATCH_CODE_UIX = f"""{PATCH_ANCHOR}
+PATCH_CODE_UNIX = f"""{PATCH_ANCHOR}
 def safe_filename(filename):
     return filename.strip().replace({ILLEGAL_UNIX!r}, {REPLACEMENT_CHAR!r})
 
@@ -35,36 +35,11 @@ ascii_filename = safe_filename
 ASCII_FILENAME_SUM = 7
 
 
-# def get_args():
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument("input", "-i", "--input", help="Input file")
-#     parser.add_argument("output", "-o", "--output", help="Output file", required=False)
-#     parser.add_argument(
-#         "-s", "--os", help="OS to patch for", choices=["win", "nix"], required=True
-#     )
-#     return parser.parse_args()
-
-
-@click.command()
-@click.argument("input", required=True, type=click.Path(exists=True))
-@click.argument("output", required=False, type=click.Path(exists=False))
-@click.option(
-    "os",
-    "-o",
-    "--os",
-    type=click.Choice(["win", "linux", "mac"]),
-    default="win",
-)
-def cli_patch(input, output, os):
-    patch(input, output, os)
-
-
 def patch(input: str, output: str | None, os: str):
-
     if output is None:
         output = input
 
-    with open(input, "r", encoding = 'utf8') as f:
+    with open(input, "r", encoding="utf8") as f:
         old = f.read()
 
     ascii_filaname_sum = old.count("ascii_filename")
@@ -76,12 +51,12 @@ def patch(input: str, output: str | None, os: str):
     code = PATCH_ANCHOR
     if os == "win":
         code = PATCH_CODE_WIN
-    elif os == "linux" or os == "mac":
-        code = PATCH_CODE_UIX
+    elif os == "unix" or os == "linux" or os == "mac":
+        code = PATCH_CODE_UNIX
 
     new = old.replace(PATCH_ANCHOR, code, 1)
 
-    with open(output, "w", encoding = 'utf8') as f:
+    with open(output, "w", encoding="utf8") as f:
         f.write(new)
 
 
@@ -90,14 +65,16 @@ def compress_sql(sql: str):
         sql, strip_comments=True, strip_whitespace=True
     )  # strip_whitespace 在文档里没写，是Copilot自动补的。检查了源码，还真有这个选项
 
+
 def is_str(node: ast.expr) -> bool:
     return isinstance(node, ast.Constant) and isinstance(node.value, str)
+
 
 def compress(input: str, output: str | None):
     if output is None:
         output = input
 
-    with open(input, "r", encoding = 'utf8') as f:
+    with open(input, "r", encoding="utf8") as f:
         code = f.read()
 
     _ast = ast.parse(code)
@@ -110,9 +87,9 @@ def compress(input: str, output: str | None):
             and len(node.args) > 0
             and is_str(node.args[0])
         ):  # 压缩所有 execute*的参数
-            sqlcode = node.args[0].value
+            sqlcode = node.args[0].value  # type:ignore
             sql = compress_sql(sqlcode)
-            node.args[0].value = sql
+            node.args[0].value = sql  # type:ignore
         elif (
             isinstance(node, ast.Assign)
             and isinstance(node.targets[0], ast.Name)
@@ -126,26 +103,27 @@ def compress(input: str, output: str | None):
             #         else:
             #             line = [...]
             for _node in ast.walk(node):
-                if is_str(_node):
-                    _node.value = compress_sql(_node.value)
+                if is_str(_node):  # type:ignore
+                    _node.value = compress_sql(_node.value)  # type:ignore
 
-    with open(output, "w", encoding = 'utf8') as f:
+    with open(output, "w", encoding="utf8") as f:
         f.write(ast.unparse(_ast))
 
 
-def compile(input: str, output: str):
-    subprocess.check_output([sys.executable, "-OO", "-m", "py_compile", input])
-    name, _ = os.path.splitext(input)
-    dir = os.path.join(os.path.dirname(output), "__pycache__")
-    pyc = glob.glob(os.path.join(dir, f"{name}.*.pyc"))[0]
-    shutil.copy(pyc, output)
+@click.command()
+@click.argument("input", required=True, type=click.Path(exists=True))
+@click.argument("output", required=False, type=click.Path(exists=False))
+@click.option(
+    "os",
+    "-o",
+    "--os",
+    type=click.Choice(["win", "unix"]),
+    default="win",
+)
+def cli_patch(input, output, os):
+    patch(input, output, os)
+    compress(output, output)
 
 
 if __name__ == "__main__":
-    # cli_patch()
-    patch("backend-original.py", "backend-patched.py", "win")
-    compress("backend-patched.py", "backend-compressed.py")
-    compile("backend-compressed.py", "backend-compressed.pyc")
-    compile("backend-original.py", "backend-original.pyc")
-    print(os.stat("backend-original.pyc").st_size)
-    print(os.stat("backend-compressed.pyc").st_size)
+    cli_patch()

@@ -10,7 +10,11 @@ Auto check update and release at 05:00 UTC+0 every day using Github Action.
 
 ## 使用方法 | Usage
 
-### Windows & Linux
+1. v0: 最早的 patch 方案，现在应该已经没有对应的 release 了。同时 patch 了 bypy 和 Launcher，在 macOS 下会因为签名校验失败而无法使用。
+2. v1(backend): Patch 了 bypy 中的 backend.py，需要自行下载并替换文件。
+3. v2(backend+update): Patch 了 bypy 中的 backend.py 和 update.py，并重新打包了除 macOS 版之外的安装包。<br/>使用补丁版的话，在新补丁发布时才会收到更新通知，需要自行下载原版安装包和补丁；使用安装包版的话，在新补丁发布时才会收到更新通知，并且只下载重打包的安装包就可以了。
+
+### Windows & Linux V1
 
 1. 根据平台和 Calibre 版本下载 [Release](https://github.com/Cirn09/calibre-do-not-translate-my-path/releases/latest)，覆盖原本 Calibre 文件。
 2. 没了
@@ -20,14 +24,14 @@ Auto check update and release at 05:00 UTC+0 every day using Github Action.
 1. Download the [Release](https://github.com/Cirn09/calibre-do-not-translate-my-path/releases/latest) for your platform and replace the original Calibre files.
 2. Enjoy.
 
-### macOS
+### macOS V1 & V2
 
-1. 解压下载的包，逐层点击进入底层路径，找到 `python-lib.bypy.frozen` 文件。
+1. 解压下载的包，得到 `python-lib.bypy.frozen` 文件。
 2. 打开 `Finder`，进入“应用程序” (/Applications)，右键点击“Calibre——显示包内容”，进入 `Contents/Frameworks/plugins` (对应的完整路径是 `/Applications/calibre.app/Contents/Frameworks/plugins` )。将第 1 步下载包里的 `python-lib.bypy.frozen`，拷贝覆盖过来、关闭 `Finder` 窗口，正常打开 `Calibre` 即可。
 
 <br/>
- 
-1. Unzip downloaded file and get `python-lib.bypy.frozen` in the subdirectory.
+
+1. Unzip downloaded file and get file `python-lib.bypy.frozen`.
 2. Open `Finder`, right-click `Calibre` in `/Applications`, choose  `Show package content`. Copy downloaded `python-lib.bypy.frozen` to `Contents/Frameworks/plugins`. Close `Finder` and now enjoy your new `Calibre`.
 
 ### Older macOS
