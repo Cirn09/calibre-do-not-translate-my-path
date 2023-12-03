@@ -431,11 +431,18 @@ jobs:
         with:
           body: |
             ## Calibre v${{ env.CALIBRE_VERSION }}
-            原版下载地址：https://calibre-ebook.com/download
-            原版 Win：https://calibre-ebook.com/dist/win64
-            原版 Linux x64：https://calibre-ebook.com/dist/linux-x86_64
-            原版 Linux arm64：https://calibre-ebook.com/dist/linux-arm64
-            原版 macOS：https://calibre-ebook.com/dist/osx
+
+            ### 文件说明
+            - backend.zip：只实现了路径不翻译。
+            - backend+update.zip：在 backend 的基础上还 patch 了更新检查链接和新版本下载链接。使用这个补丁，Calibre 检查更新时会以本项目的版本为准，下版本下载链接也被替换成了本项目 latest releases 地址。
+            - .msi/.txz：将 backend+update 补丁重新打包后的完整安装包
+
+            ### 可能有用的链接们
+            - 原版下载地址：https://calibre-ebook.com/download
+            - 原版 Win：https://calibre-ebook.com/dist/win64
+            - 原版 Linux x64：https://calibre-ebook.com/dist/linux-x86_64
+            - 原版 Linux arm64：https://calibre-ebook.com/dist/linux-arm64
+            - 原版 macOS：https://calibre-ebook.com/dist/osx
           draft: false
           tag_name: v${{ env.CALIBRE_VERSION }}
           # 因为 softprops/action-gh-releas 还没加 make_latest 选项，所以先用 prerelease 标记
