@@ -11,7 +11,6 @@ import click
 import sqlparse
 
 ILLEGAL_WINDOWS = '\\/:*?"<>|'
-ILLEGAL_UNIX = "/"
 REPLACEMENT_CHAR = "_"
 REPLACEMENT_TABLE_WINDOWS = str.maketrans(
     ILLEGAL_WINDOWS, REPLACEMENT_CHAR * len(ILLEGAL_WINDOWS)
@@ -23,12 +22,6 @@ PATCH_CODE_WIN = f"""{PATCH_ANCHOR}
 {REPLACEMENT_TABLE_WINDOWS = }
 def safe_filename(filename):
     return filename.strip().translate(REPLACEMENT_TABLE_WINDOWS)
-
-ascii_filename = safe_filename
-"""
-PATCH_CODE_UNIX = f"""{PATCH_ANCHOR}
-def safe_filename(filename):
-    return filename.strip().replace({ILLEGAL_UNIX!r}, {REPLACEMENT_CHAR!r})
 
 ascii_filename = safe_filename
 """
@@ -48,12 +41,7 @@ def patch(input: str, output: str | None, os: str):
             f"backend.py ascii_filename count changed ({ascii_filaname_sum}). May cause error! Please check!"
         )
 
-    code = PATCH_ANCHOR
-    if os == "win":
-        code = PATCH_CODE_WIN
-    elif os == "unix" or os == "linux" or os == "mac":
-        code = PATCH_CODE_UNIX
-
+    code = PATCH_CODE_WIN
     new = old.replace(PATCH_ANCHOR, code, 1)
 
     with open(output, "w", encoding="utf8") as f:
