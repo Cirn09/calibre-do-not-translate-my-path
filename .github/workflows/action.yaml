@@ -32,7 +32,7 @@ jobs:
         if: ${{ inputs.targetVersion != '' }}
         run: |
           calibre_url="https://raw.githubusercontent.com/kovidgoyal/calibre/v${{ inputs.targetVersion }}/src/calibre/db/backend.py"
-          status_code=`curl -s -o /dev/null -w "%{http_code}" "${calibre_url}"`
+          status_code=`curl -L -s -o /dev/null -w "%{http_code}" "${calibre_url}"`
           if [ ${status_code} = "200" ]; then
             if [ ! $(git tag -l "v${{ inputs.targetVersion }}") ]; then
               echo "Target version check OK"
@@ -58,7 +58,7 @@ jobs:
         id: check
         if: ${{ inputs.targetVersion == '' }}
         run: |
-          curl -k https://code.calibre-ebook.com/latest -o REMOTE_VERSION
+          curl -L -k https://code.calibre-ebook.com/latest -o REMOTE_VERSION
           echo "version=$(cat REMOTE_VERSION)" >> $GITHUB_OUTPUT
           if diff --brief REMOTE_VERSION CALIBRE_VERSION > /dev/null; then
             echo "::notice title=Calibre Version not Changed::$(cat REMOTE_VERSION)"
@@ -107,7 +107,7 @@ jobs:
           sudo apt-get update
 
           echo "Installing 7z"
-          curl https://www.7-zip.org/a/7z2201-linux-x64.tar.xz -o 7z.tar.xz
+          curl -L https://www.7-zip.org/a/7z2201-linux-x64.tar.xz -o 7z.tar.xz
           mkdir 7z
           tar Jxf 7z.tar.xz -C 7z
           echo "PATH=$(pwd)/7z:$PATH" >> $GITHUB_ENV
@@ -116,11 +116,11 @@ jobs:
       - name: Download packages
         run: |
           echo "Downloading Linux x64 packages v$CALIBRE_VERSION"
-          curl "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-$CALIBRE_VERSION-x86_64.txz" -o calibre-x64.txz
+          curl -L "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-$CALIBRE_VERSION-x86_64.txz" -o calibre-x64.txz
           echo "Downloading Linux arm64 packages v$CALIBRE_VERSION"
-          curl "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-$CALIBRE_VERSION-arm64.txz" -o calibre-arm64.txz
+          curl -L "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-$CALIBRE_VERSION-arm64.txz" -o calibre-arm64.txz
           echo "Downloading Mac packages v$CALIBRE_VERSION"
-          curl "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-$CALIBRE_VERSION.dmg" -o calibre.dmg
+          curl -L "https://download.calibre-ebook.com/$CALIBRE_VERSION/calibre-$CALIBRE_VERSION.dmg" -o calibre.dmg
 
           echo "Download Calibre source"
           git clone --depth 1 --branch v$CALIBRE_VERSION https://github.com/kovidgoyal/calibre.git
@@ -301,13 +301,13 @@ jobs:
       - name: Install Dependencies
         run: |
           echo "Downloading msi2xml"
-          curl https://jaist.dl.sourceforge.net/project/msi2xml/msi2xml/2.2.1/msi2xml-2.2.1.957-bin.zip -o msi2xml.zip
+          curl -L https://sourceforge.net/projects/msi2xml/files/msi2xml/2.2.1/msi2xml-2.2.1.957-bin.zip/download -o msi2xml.zip
           Expand-Archive msi2xml.zip -DestinationPath .
 
       - name: Download packages
         run: |
           echo "Downloading Windows msi v$Env:CALIBRE_VERSION"
-          curl "https://download.calibre-ebook.com/$Env:CALIBRE_VERSION/calibre-64bit-$Env:CALIBRE_VERSION.msi" -o calibre.msi
+          curl -L "https://download.calibre-ebook.com/$Env:CALIBRE_VERSION/calibre-64bit-$Env:CALIBRE_VERSION.msi" -o calibre.msi
 
           echo "Download Calibre source"
           git clone --depth 1 --branch v$Env:CALIBRE_VERSION https://github.com/kovidgoyal/calibre.git
