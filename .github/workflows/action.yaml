@@ -107,7 +107,7 @@ jobs:
           sudo apt-get update
 
           echo "Installing 7z"
-          curl -L https://www.7-zip.org/a/7z2201-linux-x64.tar.xz -o 7z.tar.xz
+          curl -L https://www.7-zip.org/a/7z2408-linux-x64.tar.xz -o 7z.tar.xz
           mkdir 7z
           tar Jxf 7z.tar.xz -C 7z
           echo "PATH=$(pwd)/7z:$PATH" >> $GITHUB_ENV
