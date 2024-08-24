@@ -4,6 +4,7 @@ import re
 import os as _os
 import stat
 import typing
+import traceback
 
 import click
 import lief
@@ -34,18 +35,46 @@ class BackendNotFoundError(Exception):
 class Config(object):
     seg_str: str
     seg_pstr: str
+    seg_pstr_os: str
     seg_index: str
     sizeof_long: int
 
 
-PE_CONFIG = Config(".data", ".data", ".rdata", 4)
-ELF_CONFIG = Config(".rodata", ".data.rel.ro", ".rodata", 8)
-MACHO_CONFIG = Config("__cstring", "__data", "__const", 8)
+PE_CONFIG = Config(
+    seg_str=".data",
+    seg_pstr=".data",
+    seg_pstr_os="UNK",
+    seg_index=".rdata",
+    sizeof_long=4,
+)
+ELF_CONFIG = Config(
+    seg_str=".rodata",
+    seg_pstr=".data.rel.ro",
+    seg_pstr_os="UNK",
+    seg_index=".rodata",
+    sizeof_long=8,
+)
+MACHO_CONFIG = Config(
+    seg_str="__cstring",
+    seg_pstr="__data",
+    seg_pstr_os="__const",
+    seg_index="__const",
+    sizeof_long=8,
+)
 
 WORD_BYTES = 8  # 目前 Calibre 只编译64位，字长统统 8 字节
+OS_ELEMENY_SIZE = 4
+NO_OS_ELEMENY_SIZE = 8
 
 PYC_ANCHOR = b"Crypto/Cipher/AES.pyc"
 RE_PYC = re.compile(rb"""[a-zA-Z0-9~!@#$%^&*()_+`\-={}\[\]\|\\:;"'<>,.?/]+\.pyc\0""")
+
+
+def get_anchor_str(buf: memoryview) -> bytes:
+    match = RE_PYC.search(buf)
+    if match is None:
+        raise DataNotFoundError()
+    return match.group()
 
 
 class HelperBase(object):
@@ -54,6 +83,7 @@ class HelperBase(object):
 
     _seg_index: lief.Section | None
     _seg_pstr: lief.Section | None
+    _seg_pstr_os: lief.Section | None
     _seg_str: lief.Section | None
 
     display_offset: int
@@ -64,6 +94,7 @@ class HelperBase(object):
     def __init__(self):
         self._seg_index = None
         self._seg_pstr = None
+        self._seg_pstr_os = None
         self._seg_str = None
 
     @property
@@ -83,6 +114,16 @@ class HelperBase(object):
             if self._seg_pstr is None:
                 raise SectionNotFoundError(f"section {self.config.seg_pstr} not found!")
         return self._seg_pstr
+
+    @property
+    def seg_pstr_os(self) -> lief.Section:
+        if self._seg_pstr_os is None:
+            self._seg_pstr_os = self.binary.get_section(self.config.seg_pstr_os)
+            if self._seg_pstr_os is None:
+                raise SectionNotFoundError(
+                    f"section {self.config.seg_pstr_os} not found!"
+                )
+        return self._seg_pstr_os
 
     @property
     def seg_str(self) -> lief.Section:
@@ -137,16 +178,55 @@ class HelperBase(object):
                     return i
         raise IndexNotFoundError("PYC item table index not found")
 
-    def find_pstr(self) -> int:
-        anchor_offset = self.seg_str.search(PYC_ANCHOR)
+    def find_pstr_os(self) -> int:
+        """finding string pointer array in -Os binary"""
+        try:
+            anchor = get_anchor_str(self.seg_str.content)
+        except DataNotFoundError:
+            raise DataNotFoundError(f"anchor not found in seg {self.config.seg_str}")
+
+        anchor_offset = self.seg_str.search(anchor)
         if anchor_offset is None:
             raise DataNotFoundError(f'PYC anchor("{PYC_ANCHOR}") not found')
         anchor_addr = (
             self.binary.imagebase + self.seg_str.virtual_address + anchor_offset
         )
-        p = self.seg_pstr.search(anchor_addr, size=WORD_BYTES)
+
+        p = None
+        seg_base = self.binary.imagebase + self.seg_pstr_os.virtual_address
+        for i in range(0, len(self.seg_pstr_os.content), OS_ELEMENY_SIZE):
+            addr = seg_base + i
+            buf = self.seg_pstr_os.content[i : i + OS_ELEMENY_SIZE]
+            content = int.from_bytes(buf, "little")
+            target = (addr + content) & 0xFFFFFFFF
+            if target == anchor_addr:
+                p = i
+                break
+
         if p is None:
-            # 不知道为什么，macOS elf 部分数据指针有 0x10 0000 00000000 偏移，部分指针又没有偏移，ida 能纠正这个偏移
+            raise DataNotFoundError(f'data pointer to anchor("{PYC_ANCHOR}") not found')
+        if p % OS_ELEMENY_SIZE != 0:
+            raise ValueError("search result not algined!")
+
+        return p
+
+    def find_pstr_no_os(self) -> int:
+        """finding string pointer array in non -Os binary"""
+        try:
+            anchor = get_anchor_str(self.seg_str.content)
+        except DataNotFoundError:
+            raise DataNotFoundError(f"anchor not found in seg {self.config.seg_str}")
+
+        anchor_offset = self.seg_str.search(anchor)
+        if anchor_offset is None:
+            raise DataNotFoundError(f'PYC anchor("{PYC_ANCHOR}") not found')
+        anchor_addr = (
+            self.binary.imagebase + self.seg_str.virtual_address + anchor_offset
+        )
+
+        p = self.seg_pstr.search(anchor_addr, size=NO_OS_ELEMENY_SIZE)
+        if p is None:
+            # 不知道为什么，macOS elf 部分数据指针有 0x00100000 00000000 偏移，部分指针又没有偏移，ida 能纠正这个偏移
             # 搜了一下没找着是什么技术
             # 只搜索 4 字节能消除这个偏移的影响
             p = self.seg_pstr.search(anchor_addr, size=4)
@@ -154,30 +234,14 @@ class HelperBase(object):
                 raise DataNotFoundError(
                     f'data pointer to anchor("{PYC_ANCHOR}") not found'
                 )
-        if p % WORD_BYTES != 0:
+        if p % NO_OS_ELEMENY_SIZE != 0:
             raise ValueError("search result not algined!")
 
-        seg_str_start = self.binary.imagebase + self.seg_str.offset
-        seg_str_end = seg_str_start + len(self.seg_str.content)
-
-        # 向前找开头，目前 Crypto/Cipher/AES.pyc 对应的位置就是开头，但不排除后续引入了比它更靠前的包
-        while p > 0:
-            va = int.from_bytes(self.seg_pstr.content[p - WORD_BYTES : p], "little")
-            if not seg_str_start <= va < seg_str_end:
-                break
-            # foa = va - self.binary.imagebase - self.seg_str.virtual_address + self.seg_str.offset
-            offset = va - self.binary.imagebase - self.seg_str.virtual_address
-
-            if RE_PYC.match(self.seg_str.content, offset):
-                p -= WORD_BYTES
-            else:
-                break
-        # self.offset_pstr = p
         return p
 
-    def find_target(self, target) -> tuple[int, int]:
+    def find_target_no_os(self, target) -> tuple[int, int]:
         offset_index = self.find_index()
-        offset_pstr_start = self.find_pstr()
+        offset_pstr_start = self.find_pstr_no_os()
 
         foa_index = self.display_offset + self.seg_index.offset + offset_index
         va_index = self.binary.imagebase + self.seg_index.virtual_address + offset_index
@@ -192,12 +256,12 @@ class HelperBase(object):
         if offset_str is None:
             raise DataNotFoundError(f'target "{target}" not found')
         va = self.binary.imagebase + self.seg_str.virtual_address + offset_str
-        offset_pstr = self.seg_pstr.search(va, size=WORD_BYTES)
+        offset_pstr = self.seg_pstr.search(va, size=NO_OS_ELEMENY_SIZE)
         if offset_pstr is None:
             offset_pstr = self.seg_pstr.search(va, size=4)
             if offset_pstr is None:
                 raise DataNotFoundError(f'pointer to target "{target}" not found')
-        index = (offset_pstr - offset_pstr_start) // WORD_BYTES
+        index = (offset_pstr - offset_pstr_start) // NO_OS_ELEMENY_SIZE
 
         foa_offset = (
             self.display_offset
@@ -211,9 +275,8 @@ class HelperBase(object):
             + offset_index
             + self.config.sizeof_long * (2 * index + 1)
         )
-
         print(
-            f"[+] PYC {target} index: {index:#x}, offset: {foa_offset:#x}, size: {foa_size:#x}"
+            f"[+] PYC {target} index: {index:#x}, *offset: {foa_offset:#x}, *size: {foa_size:#x}"
         )
 
         offset_seg_offset = (
@@ -237,6 +300,77 @@ class HelperBase(object):
 
         print(f"[+] PYC {target} offset: {offset:#x}, size: {size:#x}")
         return offset, size
+
+    def find_target_os(self, target) -> tuple[int, int]:
+        offset_index = self.find_index()
+        offset_pstr_start = self.find_pstr_os()
+
+        foa_index = self.display_offset + self.seg_index.offset + offset_index
+        va_index = self.binary.imagebase + self.seg_index.virtual_address + offset_index
+        print(f"[+] PYC item table foa: {foa_index:#x}, va: {va_index:#x}")
+        foa_pstr = self.display_offset + self.seg_pstr_os.offset + offset_pstr_start
+        va_pstr = (
+            self.binary.imagebase + self.seg_pstr_os.virtual_address + offset_pstr_start
+        )
+        print(f"[+] PYC string table foa: {foa_pstr:#x}, va: {va_pstr:#x}")
+
+        offset_str = self.seg_str.search(target)
+        if offset_str is None:
+            raise DataNotFoundError(f'target "{target}" not found')
+        va = self.binary.imagebase + self.seg_str.virtual_address + offset_str
+        rel = va - va_pstr
+
+        # or search((1 << 32) + rel, size=OS_ELEMENY_SIZE)
+        offset_pstr = self.seg_pstr_os.search(
+            rel.to_bytes(OS_ELEMENY_SIZE, "little", signed=True)
+        )
+        if offset_pstr is None:
+            raise DataNotFoundError(f'pointer to target "{target}" not found')
+        index = (offset_pstr - offset_pstr_start) // OS_ELEMENY_SIZE
+
+        foa_offset = (
+            self.display_offset
+            + self.seg_index.offset
+            + offset_index
+            + self.config.sizeof_long * 2 * index
+        )
+        foa_size = (
+            self.display_offset
+            + self.seg_index.offset
+            + offset_index
+            + self.config.sizeof_long * (2 * index + 1)
+        )
+        print(
+            f"[+] PYC {target} index: {index:#x}, *offset: {foa_offset:#x}, *size: {foa_size:#x}"
+        )
+
+        offset_seg_offset = (
+            offset_index + self.config.sizeof_long * 2 * index
+        )  # backend 的 offset 在 段内偏移
+        offset_seg_size = offset_index + self.config.sizeof_long * (
+            2 * index + 1
+        )  # backend 的 size 在 段内偏移
+        offset = int.from_bytes(
+            self.seg_index.content[
+                offset_seg_offset : offset_seg_offset + self.config.sizeof_long
+            ],
+            "little",
+        )
+        size = int.from_bytes(
+            self.seg_index.content[
+                offset_seg_size : offset_seg_size + self.config.sizeof_long
+            ],
+            "little",
+        )
+
+        print(f"[+] PYC {target} offset: {offset:#x}, size: {size:#x}")
+        return offset, size
+
+    def find_target(self, target) -> tuple[int, int]:
+        try:
+            return self.find_target_no_os(target)
+        except:
+            return self.find_target_os(target)
 
 
 class PEHelper(HelperBase):
