@@ -18,7 +18,11 @@ class IndexNotFoundError(Exception):
     pass
 
 
-class PstrNotFoundError(Exception):
+class DataNotFoundError(Exception):
+    pass
+
+
+class SectionNotFoundError(Exception):
     pass
 
 
@@ -40,8 +44,7 @@ MACHO_CONFIG = Config("__cstring", "__data", "__const", 8)
 
 WORD_BYTES = 8  # 目前 Calibre 只编译64位，字长统统 8 字节
 
-# TODO: 等 lief 0.13 release (https://github.com/lief-project/LIEF/issues/880)
-PYC_ANCHOR = "Crypto/Cipher/AES.pyc"
+PYC_ANCHOR = b"Crypto/Cipher/AES.pyc"
 RE_PYC = re.compile(rb"""[a-zA-Z0-9~!@#$%^&*()_+`\-={}\[\]\|\\:;"'<>,.?/]+\.pyc\0""")
 
 
@@ -67,18 +70,26 @@ class HelperBase(object):
     def seg_index(self) -> lief.Section:
         if self._seg_index is None:
             self._seg_index = self.binary.get_section(self.config.seg_index)
+            if self._seg_index is None:
+                raise SectionNotFoundError(
+                    f"section {self.config.seg_index} not found!"
+                )
         return self._seg_index
 
     @property
     def seg_pstr(self) -> lief.Section:
         if self._seg_pstr is None:
             self._seg_pstr = self.binary.get_section(self.config.seg_pstr)
+            if self._seg_pstr is None:
+                raise SectionNotFoundError(f"section {self.config.seg_pstr} not found!")
         return self._seg_pstr
 
     @property
     def seg_str(self) -> lief.Section:
         if self._seg_str is None:
             self._seg_str = self.binary.get_section(self.config.seg_str)
+            if self._seg_str is None:
+                raise SectionNotFoundError(f"section {self.config.seg_str} not found!")
         return self._seg_str
 
     def find_index(self) -> int:
@@ -95,7 +106,9 @@ class HelperBase(object):
                 i + sizeof_long * (j * 2 + 2),
             )
             if (
-                all(raw[j] == 0 for j in range(*get_offset_range(0)))  # 首个 offset 必定为 0
+                all(
+                    raw[j] == 0 for j in range(*get_offset_range(0))
+                )  # 首个 offset 必定为 0
                 and any(raw[j] != 0 for j in range(*get_size_range(0)))  # size 必不为 0
                 and all(  # 首个文件的 size 必定等于第二个文件的 offset
                     raw[j] == raw[k]
@@ -126,17 +139,21 @@ class HelperBase(object):
 
     def find_pstr(self) -> int:
         anchor_offset = self.seg_str.search(PYC_ANCHOR)
-        if anchor_offset == 0xFFFFFFFFFFFFFFFF:  # # TODO: 等 lief 0.13 release
-            raise PstrNotFoundError(f'PYC anchor("{PYC_ANCHOR}") not found')
+        if anchor_offset is None:
+            raise DataNotFoundError(f'PYC anchor("{PYC_ANCHOR}") not found')
         anchor_addr = (
             self.binary.imagebase + self.seg_str.virtual_address + anchor_offset
         )
         p = self.seg_pstr.search(anchor_addr, size=WORD_BYTES)
-        if p == 0xFFFFFFFFFFFFFFFF:
+        if p is None:
             # 不知道为什么，macOS elf 部分数据指针有 0x10 0000 00000000 偏移，部分指针又没有偏移，ida 能纠正这个偏移
             # 搜了一下没找着是什么技术
             # 只搜索 4 字节能消除这个偏移的影响
             p = self.seg_pstr.search(anchor_addr, size=4)
+            if p is None:
+                raise DataNotFoundError(
+                    f'data pointer to anchor("{PYC_ANCHOR}") not found'
+                )
         if p % WORD_BYTES != 0:
             raise ValueError("search result not algined!")
 
@@ -172,10 +189,14 @@ class HelperBase(object):
         print(f"[+] PYC string table foa: {foa_pstr:#x}, va: {va_pstr:#x}")
 
         offset_str = self.seg_str.search(target)
+        if offset_str is None:
+            raise DataNotFoundError(f'target "{target}" not found')
         va = self.binary.imagebase + self.seg_str.virtual_address + offset_str
         offset_pstr = self.seg_pstr.search(va, size=WORD_BYTES)
-        if offset_pstr == 0xFFFFFFFFFFFFFFFF:
+        if offset_pstr is None:
             offset_pstr = self.seg_pstr.search(va, size=4)
+            if offset_pstr is None:
+                raise DataNotFoundError(f'pointer to target "{target}" not found')
         index = (offset_pstr - offset_pstr_start) // WORD_BYTES
 
         foa_offset = (
@@ -223,7 +244,7 @@ class PEHelper(HelperBase):
 
     def __init__(self, path):
         super().__init__()
-        self.binary = lief.PE.parse(path)
+        self.binary = lief.PE.parse(path)  # type:ignore
         self.config = PE_CONFIG
         self.display_offset = 0
 
@@ -233,7 +254,7 @@ class ELFHelper(HelperBase):
 
     def __init__(self, path):
         super().__init__()
-        self.binary = lief.ELF.parse(path)
+        self.binary = lief.ELF.parse(path)  # type:ignore
         self.config = ELF_CONFIG
         self.display_offset = 0
 
@@ -244,7 +265,7 @@ class MachOHelper(HelperBase):
 
     def __init__(self, path):
         super().__init__()
-        self.fat_binary = lief.MachO.parse(path)
+        self.fat_binary = lief.MachO.parse(path)  # type:ignore
         self.binary = self.fat_binary.at(0)
         self.config = MACHO_CONFIG
         self.display_offset = self.binary.fat_offset
