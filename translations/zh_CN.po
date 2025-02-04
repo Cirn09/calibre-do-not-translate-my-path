@@ -1,0 +1,102 @@
+# Translations template for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: Cirn09@outlook.com\n"
+"POT-Creation-Date: 2025-02-04 01:29+0800\n"
+"PO-Revision-Date: 2025-02-04 01:33+0800\n"
+"Last-Translator: Cirn09 <Cirn09@outlook.com>\n"
+"Language-Team: \n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+"X-Generator: Poedit 3.5\n"
+
+#: notrans/__init__.py:15
+msgid "Do not translate my paths"
+msgstr "不要翻译我的路径"
+
+#: notrans/ui.py:38
+msgid "Check to disable translation."
+msgstr "选中以禁用路径翻译"
+
+#: notrans/ui.py:43
+msgid "Library"
+msgstr "书库"
+
+#: notrans/ui.py:44
+msgid "Do not translate paths when \"adding books\""
+msgstr "“添加书籍”时不要对保存路径进行翻译"
+
+#: notrans/ui.py:48
+msgid "USB Device (include local floder)"
+msgstr "USB 设备（含本地文件夹）"
+
+#: notrans/ui.py:51
+msgid ""
+"Contains all system native directories (U disk, SD card, mounted "
+"directories, etc.)"
+msgstr "包含所有系统原生原文件夹（U 盘、SD 卡、挂载的文件夹等）"
+
+#: notrans/ui.py:57
+msgid "MTP Device"
+msgstr "MTP 设备"
+
+#: notrans/ui.py:58
+msgid "Media Transfer Protocol devices, like Android devices"
+msgstr "MTP 设备，Android 设备都是此类型"
+
+#: notrans/ui.py:62
+msgid "Smart Device App"
+msgstr "远程 APP"
+
+#: notrans/ui.py:63
+msgid "Smart Device App... Is this thing really useful?"
+msgstr "远程 App…… 这玩意真的有人用吗"
+
+#: notrans/ui.py:79
+msgid "No Trans"
+msgstr ""
+
+#: notrans/ui.py:81 notrans/ui.py:99
+msgid "Configure No Trans"
+msgstr "配置翻译选项"
+
+#: notrans/ui.py:97
+msgid "Configure"
+msgstr "配置"
+
+#: notrans/ui.py:103 notrans/ui.py:125
+msgid "Refresh Library"
+msgstr "刷新书库"
+
+#: notrans/ui.py:105
+msgid "Refresh the paths for all books in this library"
+msgstr "刷新当前书库所有书籍的路径"
+
+#: notrans/ui.py:127
+msgid ""
+"Refresh the paths for all books in this library?\n"
+"This operation may take a while to complete."
+msgstr ""
+"是否刷新当前书库所有书籍的路径？\n"
+"此操作可能耗时较长"
+
+#: notrans/ui.py:129
+msgid "Continue"
+msgstr "继续"
+
+#: notrans/ui.py:130
+msgid "Cancel"
+msgstr "取消"
+
+#: notrans/ui.py:135
+msgid "NoTrans: Refreshing Library"
+msgstr "NoTrans: 刷新书库中"

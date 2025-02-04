@@ -1,0 +1,7 @@
+.vscode
+*.pyc
+*.zip
+__pycache__
+note.md
+*.epub
+*.mo
