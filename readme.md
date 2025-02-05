@@ -19,13 +19,28 @@ If you modify the translation options of the library and want to refresh the cur
 
 # Q&A
 
+Q: How does it work?
+
+A：https://blog.cirn09.xyz//2025/02/05/calibre-no-trans/
+
+
 Q: Why v3? What about v1 and v2?
+
 A: v1 and v2 are patch solutions, v3 is a plugin solution.
 
+
 Q: Why are there still v6.x.x and v7.x.x in the Release?
+
 A: Those high version numbers are used in the patch solution and correspond to each Calibre version.
 
+
 Q: What about the patch version?
+
 A: See the bypy-patch branch
 
+
 ps: This readme translate by Github copilot auto complete.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Cirn09/calibre-do-not-translate-my-path&type=Date)](https://star-history.com/#Cirn09/calibre-do-not-translate-my-path&Date)

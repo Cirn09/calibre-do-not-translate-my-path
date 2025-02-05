@@ -19,11 +19,24 @@
 
 # 问题
 
+Q: 原理？
+
+A：https://blog.cirn09.xyz//2025/02/05/calibre-no-trans/
+
 Q：为什么是 v3？v1 和 v2 呢？
+
 A：v1、v2 是 patch 方案，v3 是插件方案。
 
+
 Q：Release 里为什么还有 v6.x.x 和 v7.x.x？
+
 A：那些高版本号是 patch 方案时使用的，和 Calibre 版本一一对应。
 
+
 Q：Patch 版呢？
+
 A：见 bypy-patch 分支
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Cirn09/calibre-do-not-translate-my-path&type=Date)](https://star-history.com/#Cirn09/calibre-do-not-translate-my-path&Date)
