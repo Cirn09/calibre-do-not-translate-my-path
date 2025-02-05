@@ -7,8 +7,4 @@ from calibre.utils.config import JSONConfig
 prefs = JSONConfig("plugins/notrans")
 
 prefs.defaults["db"] = True
-prefs.defaults["usb"] = True
-prefs.defaults["mtp"] = True
-prefs.defaults["app"] = True
-
-prefs.defaults["hello_world_msg"] = "Hello, World!"
+prefs.defaults["send"] = True

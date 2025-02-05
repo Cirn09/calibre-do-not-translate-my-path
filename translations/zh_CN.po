@@ -7,9 +7,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
-"Report-Msgid-Bugs-To: Cirn09@outlook.com\n"
-"POT-Creation-Date: 2025-02-04 01:29+0800\n"
-"PO-Revision-Date: 2025-02-04 01:33+0800\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-02-05 22:08+0800\n"
+"PO-Revision-Date: 2025-02-05 22:11+0800\n"
 "Last-Translator: Cirn09 <Cirn09@outlook.com>\n"
 "Language-Team: \n"
 "Language: zh_CN\n"
@@ -19,69 +19,51 @@ msgstr ""
 "Generated-By: Babel 2.17.0\n"
 "X-Generator: Poedit 3.5\n"
 
-#: notrans/__init__.py:15
+#: __init__.py:15
 msgid "Do not translate my paths"
 msgstr "不要翻译我的路径"
 
-#: notrans/ui.py:38
+#: ui.py:35
 msgid "Check to disable translation."
 msgstr "选中以禁用路径翻译"
 
-#: notrans/ui.py:43
+#: ui.py:40
 msgid "Library"
 msgstr "书库"
 
-#: notrans/ui.py:44
+#: ui.py:41
 msgid "Do not translate paths when \"adding books\""
 msgstr "“添加书籍”时不要对保存路径进行翻译"
 
-#: notrans/ui.py:48
-msgid "USB Device (include local floder)"
-msgstr "USB 设备（含本地文件夹）"
+#: ui.py:45
+msgid "Send to device"
+msgstr "发送到设备"
 
-#: notrans/ui.py:51
-msgid ""
-"Contains all system native directories (U disk, SD card, mounted "
-"directories, etc.)"
-msgstr "包含所有系统原生原文件夹（U 盘、SD 卡、挂载的文件夹等）"
+#: ui.py:46
+msgid "Include USB devices, MTP devices, local folders, mail, KoReader, etc."
+msgstr "包括 USB 设备、MTP 设备、本地文件夹、邮件、KoReader 等。"
 
-#: notrans/ui.py:57
-msgid "MTP Device"
-msgstr "MTP 设备"
-
-#: notrans/ui.py:58
-msgid "Media Transfer Protocol devices, like Android devices"
-msgstr "MTP 设备，Android 设备都是此类型"
-
-#: notrans/ui.py:62
-msgid "Smart Device App"
-msgstr "远程 APP"
-
-#: notrans/ui.py:63
-msgid "Smart Device App... Is this thing really useful?"
-msgstr "远程 App…… 这玩意真的有人用吗"
-
-#: notrans/ui.py:79
+#: ui.py:60
 msgid "No Trans"
 msgstr ""
 
-#: notrans/ui.py:81 notrans/ui.py:99
+#: ui.py:62 ui.py:80
 msgid "Configure No Trans"
 msgstr "配置翻译选项"
 
-#: notrans/ui.py:97
+#: ui.py:78
 msgid "Configure"
 msgstr "配置"
 
-#: notrans/ui.py:103 notrans/ui.py:125
+#: ui.py:84 ui.py:106
 msgid "Refresh Library"
 msgstr "刷新书库"
 
-#: notrans/ui.py:105
+#: ui.py:86
 msgid "Refresh the paths for all books in this library"
 msgstr "刷新当前书库所有书籍的路径"
 
-#: notrans/ui.py:127
+#: ui.py:108
 msgid ""
 "Refresh the paths for all books in this library?\n"
 "This operation may take a while to complete."
@@ -89,14 +71,14 @@ msgstr ""
 "是否刷新当前书库所有书籍的路径？\n"
 "此操作可能耗时较长"
 
-#: notrans/ui.py:129
+#: ui.py:110
 msgid "Continue"
 msgstr "继续"
 
-#: notrans/ui.py:130
+#: ui.py:111
 msgid "Cancel"
 msgstr "取消"
 
-#: notrans/ui.py:135
+#: ui.py:116
 msgid "NoTrans: Refreshing Library"
 msgstr "NoTrans: 刷新书库中"

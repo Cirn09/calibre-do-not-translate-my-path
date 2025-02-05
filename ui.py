@@ -16,14 +16,11 @@ from calibre.gui2.actions import InterfaceAction, menu_action_unique_name
 from calibre.gui2 import question_dialog
 from calibre.gui2.threaded_jobs import ThreadedJob
 from qt.core import (
-    QHBoxLayout,
     QLabel,
-    QLineEdit,
     QWidget,
     QCheckBox,
     QVBoxLayout,
     QMenu,
-    QUrl,
 )
 from calibre_plugins.notrans.config import prefs
 
@@ -45,30 +42,14 @@ class ConfigWidget(QWidget):
         self.db.setChecked(prefs["db"])
         self.l.addWidget(self.db)
 
-        self.usb = QCheckBox(_("USB Device (include local floder)"), self)
-        self.usb.setToolTip(
-            _(
-                "Contains all system native directories (U disk, SD card, mounted directories, etc.)"
-            )
-        )
-        self.usb.setChecked(prefs["usb"])
-        self.l.addWidget(self.usb)
-
-        self.mtp = QCheckBox(_("MTP Device"), self)
-        self.mtp.setToolTip(_("Media Transfer Protocol devices, like Android devices"))
-        self.mtp.setChecked(prefs["mtp"])
-        self.l.addWidget(self.mtp)
-
-        self.app = QCheckBox(_("Smart Device App"), self)
-        self.app.setToolTip(_("Smart Device App... Is this thing really useful?"))
-        self.app.setChecked(prefs["app"])
-        self.l.addWidget(self.app)
+        self.send = QCheckBox(_("Send to device"), self)
+        self.send.setToolTip(_("Include USB devices, MTP devices, local folders, mail, KoReader, etc."))
+        self.send.setChecked(prefs["send"])
+        self.l.addWidget(self.send)
 
     def save_settings(self):
         prefs["db"] = self.db.isChecked()
-        prefs["usb"] = self.usb.isChecked()
-        prefs["mtp"] = self.mtp.isChecked()
-        prefs["app"] = self.app.isChecked()
+        prefs["send"] = self.send.isChecked()
 
 
 class NoTrans(InterfaceAction):
